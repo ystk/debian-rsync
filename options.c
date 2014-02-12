@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1998-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 2000, 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2002-2009 Wayne Davison
+ * Copyright (C) 2002-2011 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,7 +85,6 @@ int numeric_ids = 0;
 int allow_8bit_chars = 0;
 int force_delete = 0;
 int io_timeout = 0;
-int allowed_lull = 0;
 int prune_empty_dirs = 0;
 int use_qsort = 0;
 char *files_from = NULL;
@@ -254,13 +253,13 @@ static void print_rsync_version(enum logcode f)
 #ifdef ICONV_OPTION
 	iconv = "";
 #endif
-#if defined HAVE_LUTIMES && defined HAVE_UTIMES
+#ifdef CAN_SET_SYMLINK_TIMES
 	symtimes = "";
 #endif
 
 	rprintf(f, "%s  version %s  protocol version %d%s\n",
 		RSYNC_NAME, RSYNC_VERSION, PROTOCOL_VERSION, subprotocol);
-	rprintf(f, "Copyright (C) 1996-2009 by Andrew Tridgell, Wayne Davison, and others.\n");
+	rprintf(f, "Copyright (C) 1996-2011 by Andrew Tridgell, Wayne Davison, and others.\n");
 	rprintf(f, "Web site: http://rsync.samba.org/\n");
 	rprintf(f, "Capabilities:\n");
 	rprintf(f, "    %d-bit files, %d-bit inums, %d-bit timestamps, %d-bit long ints,\n",
@@ -370,7 +369,7 @@ void usage(enum logcode F)
   rprintf(F,"     --del                   an alias for --delete-during\n");
   rprintf(F,"     --delete                delete extraneous files from destination dirs\n");
   rprintf(F,"     --delete-before         receiver deletes before transfer, not during\n");
-  rprintf(F,"     --delete-during         receiver deletes during transfer (default)\n");
+  rprintf(F,"     --delete-during         receiver deletes during the transfer\n");
   rprintf(F,"     --delete-delay          find deletions during, delete after\n");
   rprintf(F,"     --delete-after          receiver deletes after transfer, not during\n");
   rprintf(F,"     --delete-excluded       also delete excluded files from destination dirs\n");
@@ -434,7 +433,7 @@ void usage(enum logcode F)
   rprintf(F," -4, --ipv4                  prefer IPv4\n");
   rprintf(F," -6, --ipv6                  prefer IPv6\n");
   rprintf(F,"     --version               print version number\n");
-  rprintf(F,"(-h) --help                  show this help (-h works with no other options)\n");
+  rprintf(F,"(-h) --help                  show this help (-h is --help only if used alone)\n");
 
   rprintf(F,"\n");
   rprintf(F,"Use \"rsync --daemon --help\" to see the daemon-mode command-line options.\n");
@@ -487,7 +486,7 @@ static struct poptOption long_options[] = {
   {"xattrs",          'X', POPT_ARG_NONE,   0, 'X', 0, 0 },
   {"no-xattrs",        0,  POPT_ARG_VAL,    &preserve_xattrs, 0, 0, 0 },
   {"no-X",             0,  POPT_ARG_VAL,    &preserve_xattrs, 0, 0, 0 },
-  {"times",           't', POPT_ARG_VAL,    &preserve_times, 2, 0, 0 },
+  {"times",           't', POPT_ARG_VAL,    &preserve_times, 1, 0, 0 },
   {"no-times",         0,  POPT_ARG_VAL,    &preserve_times, 0, 0, 0 },
   {"no-t",             0,  POPT_ARG_VAL,    &preserve_times, 0, 0, 0 },
   {"omit-dir-times",  'O', POPT_ARG_VAL,    &omit_dir_times, 1, 0, 0 },
@@ -531,8 +530,8 @@ static struct poptOption long_options[] = {
   {"ignore-times",    'I', POPT_ARG_NONE,   &ignore_times, 0, 0, 0 },
   {"size-only",        0,  POPT_ARG_NONE,   &size_only, 0, 0, 0 },
   {"one-file-system", 'x', POPT_ARG_NONE,   0, 'x', 0, 0 },
-  {"no-one-file-system",'x',POPT_ARG_VAL,   &one_file_system, 0, 0, 0 },
-  {"no-x",            'x', POPT_ARG_VAL,    &one_file_system, 0, 0, 0 },
+  {"no-one-file-system",0, POPT_ARG_VAL,    &one_file_system, 0, 0, 0 },
+  {"no-x",             0,  POPT_ARG_VAL,    &one_file_system, 0, 0, 0 },
   {"update",          'u', POPT_ARG_NONE,   &update_only, 0, 0, 0 },
   {"existing",         0,  POPT_ARG_NONE,   &ignore_non_existing, 0, 0, 0 },
   {"ignore-non-existing",0,POPT_ARG_NONE,   &ignore_non_existing, 0, 0, 0 },
@@ -1065,7 +1064,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			preserve_links = 1;
 #endif
 			preserve_perms = 1;
-			preserve_times = 2;
+			preserve_times = 1;
 			preserve_gid = 1;
 			preserve_uid = 1;
 			preserve_devices = 1;
@@ -1492,17 +1491,18 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		return 0;
 	}
 	if (backup_dir) {
-		backup_dir_len = strlcpy(backup_dir_buf, backup_dir, sizeof backup_dir_buf);
-		backup_dir_remainder = sizeof backup_dir_buf - backup_dir_len;
-		if (backup_dir_remainder < 32) {
+		size_t len = strlcpy(backup_dir_buf, backup_dir, sizeof backup_dir_buf);
+		if (len > sizeof backup_dir_buf - 128) {
 			snprintf(err_buf, sizeof err_buf,
 				"the --backup-dir path is WAY too long.\n");
 			return 0;
 		}
+		backup_dir_len = (int)len;
 		if (backup_dir_buf[backup_dir_len - 1] != '/') {
 			backup_dir_buf[backup_dir_len++] = '/';
 			backup_dir_buf[backup_dir_len] = '\0';
 		}
+		backup_dir_remainder = sizeof backup_dir_buf - backup_dir_len;
 		if (verbose > 1 && !am_sender)
 			rprintf(FINFO, "backup_dir is %s\n", backup_dir_buf);
 	} else if (!backup_suffix_len && (!am_server || !am_sender)) {
@@ -1515,13 +1515,18 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		parse_rule(&filter_list, backup_dir_buf, 0, 0);
 	}
 
+	if (preserve_times) {
+		preserve_times = PRESERVE_FILE_TIMES;
+		if (!omit_dir_times)
+			preserve_times |= PRESERVE_DIR_TIMES;
+#ifdef CAN_SET_SYMLINK_TIMES
+		preserve_times |= PRESERVE_LINK_TIMES;
+#endif
+	}
+
 	if (make_backups && !backup_dir) {
 		omit_dir_times = 0; /* Implied, so avoid -O to sender. */
-		if (preserve_times > 1)
-			preserve_times = 1;
-	} else if (omit_dir_times) {
-		if (preserve_times > 1)
-			preserve_times = 1;
+		preserve_times &= ~PRESERVE_DIR_TIMES;
 	}
 
 	if (stdout_format) {
@@ -1831,7 +1836,7 @@ void server_options(char **args, int *argc_p)
 			argstr[x++] = '.';
 		if (allow_inc_recurse)
 			argstr[x++] = 'i';
-#if defined HAVE_LUTIMES && defined HAVE_UTIMES
+#ifdef CAN_SET_SYMLINK_TIMES
 		argstr[x++] = 'L';
 #endif
 #ifdef ICONV_OPTION

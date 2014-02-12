@@ -24,6 +24,7 @@
 int remote_protocol = 0;
 int file_extra_cnt = 0; /* count of file-list extras that everyone gets */
 int inc_recurse = 0;
+int compat_flags = 0;
 int use_safe_inc_flist = 0;
 
 extern int verbose;
@@ -248,10 +249,9 @@ void setup_protocol(int f_out,int f_in)
 			exit_cleanup(RERR_PROTOCOL);
 		}
 	} else if (protocol_version >= 30) {
-		int compat_flags;
 		if (am_server) {
 			compat_flags = allow_inc_recurse ? CF_INC_RECURSE : 0;
-#if defined HAVE_LUTIMES && defined HAVE_UTIMES
+#ifdef CAN_SET_SYMLINK_TIMES
 			compat_flags |= CF_SYMLINK_TIMES;
 #endif
 #ifdef ICONV_OPTION
@@ -269,7 +269,7 @@ void setup_protocol(int f_out,int f_in)
 			    ? strchr(client_info, 'L') != NULL
 			    : !!(compat_flags & CF_SYMLINK_TIMES);
 		}
-#if defined HAVE_LUTIMES && defined HAVE_UTIMES
+#ifdef CAN_SET_SYMLINK_TIMES
 		else
 			receiver_symlink_times = 1;
 #endif
@@ -287,7 +287,7 @@ void setup_protocol(int f_out,int f_in)
 		}
 		use_safe_inc_flist = !!(compat_flags & CF_SAFE_FLIST);
 		need_messages_from_generator = 1;
-#if defined HAVE_LUTIMES && defined HAVE_UTIMES
+#ifdef CAN_SET_SYMLINK_TIMES
 	} else if (!am_sender) {
 		receiver_symlink_times = 1;
 #endif

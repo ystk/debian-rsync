@@ -1,6 +1,6 @@
-.TH "rsyncd.conf" "5" "31 Dec 2009" "" ""
+.TH "rsyncd.conf" "5" "23 Sep 2011" "" ""
 .SH "NAME"
-rsyncd.conf \(em configuration file for rsync in daemon mode
+rsyncd.conf \- configuration file for rsync in daemon mode
 .SH "SYNOPSIS"
 
 .PP 
@@ -22,7 +22,7 @@ The file consists of modules and parameters. A module begins with the
 name of the module in square brackets and continues until the next
 module begins. Modules contain parameters of the form \(dq\&name = value\(dq\&.
 .PP 
-The file is line-based \(em that is, each newline-terminated line represents
+The file is line\-based \-\- that is, each newline\-terminated line represents
 either a comment, a module name or a parameter.
 .PP 
 Only the first equals sign in a parameter is significant. Whitespace before
@@ -53,8 +53,8 @@ bind to a port numbered under 1024 (as is the default 873), or to set
 file ownership.  Otherwise, it must just have permission to read and
 write the appropriate data, log, and lock files.
 .PP 
-You can launch it either via inetd, as a stand-alone daemon, or from
-an rsync client via a remote shell.  If run as a stand-alone daemon then
+You can launch it either via inetd, as a stand\-alone daemon, or from
+an rsync client via a remote shell.  If run as a stand\-alone daemon then
 just run the command \(dq\&\fBrsync \-\-daemon\fP\(dq\& from a suitable startup script.
 .PP 
 When run via inetd you should add a line like this to /etc/services:
@@ -76,7 +76,7 @@ your system.  You will then need to send inetd a HUP signal to tell it to
 reread its config file.
 .PP 
 Note that you should \fBnot\fP send the rsync daemon a HUP signal to force
-it to reread the \f(CWrsyncd.conf\fP file. The file is re-read on each client
+it to reread the \f(CWrsyncd.conf\fP file. The file is re\-read on each client
 connection.
 .PP 
 .SH "GLOBAL PARAMETERS"
@@ -103,12 +103,12 @@ daemon will abort rather than overwrite the file.
 .IP "\fBport\fP"
 You can override the default port the daemon will listen on
 by specifying this value (defaults to 873).  This is ignored if the daemon
-is being run by inetd, and is superseded by the \fB\-\-port\fP command-line option.
+is being run by inetd, and is superseded by the \fB\-\-port\fP command\-line option.
 .IP 
 .IP "\fBaddress\fP"
 You can override the default IP address the daemon
 will listen on by specifying this value.  This is ignored if the daemon is
-being run by inetd, and is superseded by the \fB\-\-address\fP command-line option.
+being run by inetd, and is superseded by the \fB\-\-address\fP command\-line option.
 .IP 
 .IP "\fBsocket options\fP"
 This parameter can provide endless fun for people
@@ -119,7 +119,7 @@ slower!). Read the man page for the
 system call for
 details on some of the options you may be able to set. By default no
 special socket options are set.  These settings can also be specified
-via the \fB\-\-sockopts\fP command-line option.
+via the \fB\-\-sockopts\fP command\-line option.
 .IP 
 .SH "MODULE PARAMETERS"
 
@@ -143,27 +143,33 @@ This parameter specifies the directory in the daemon\(cq\&s
 filesystem to make available in this module.  You must specify this parameter
 for each module in \f(CWrsyncd.conf\fP.
 .IP 
+It is fine if the path includes internal spaces \-\- they will be retained
+verbatim (which means that you shouldn\(cq\&t try to escape them).  If your final
+directory has a trailing space (and this is somehow not something you wish to
+fix), append a trailing slash to the path to avoid losing the trailing
+whitespace.
+.IP 
 .IP "\fBuse chroot\fP"
 If \(dq\&use chroot\(dq\& is true, the rsync daemon will chroot
 to the \(dq\&path\(dq\& before starting the file transfer with the client.  This has
 the advantage of extra protection against possible implementation security
-holes, but it has the disadvantages of requiring super-user privileges,
+holes, but it has the disadvantages of requiring super\-user privileges,
 of not being able to follow symbolic links that are either absolute or outside
 of the new root path, and of complicating the preservation of users and groups
 by name (see below).
 .IP 
-As an additional safety feature, you can specify a dot-dir in the module\(cq\&s
+As an additional safety feature, you can specify a dot\-dir in the module\(cq\&s
 \(dq\&path\(dq\& to indicate the point where the chroot should occur.  This allows rsync
-to run in a chroot with a non-\(dq\&/\(dq\& path for the top of the transfer hierarchy.
+to run in a chroot with a non\-\(dq\&/\(dq\& path for the top of the transfer hierarchy.
 Doing this guards against unintended library loading (since those absolute
 paths will not be inside the transfer hierarchy unless you have used an unwise
 pathname), and lets you setup libraries for the chroot that are outside of the
 transfer.  For example, specifying \(dq\&/var/rsync/./module1\(dq\& will chroot to the
-\(dq\&/var/rsync\(dq\& directory and set the inside-chroot path to \(dq\&/module1\(dq\&.  If you
-had omitted the dot-dir, the chroot would have used the whole path, and the
-inside-chroot path would have been \(dq\&/\(dq\&.
+\(dq\&/var/rsync\(dq\& directory and set the inside\-chroot path to \(dq\&/module1\(dq\&.  If you
+had omitted the dot\-dir, the chroot would have used the whole path, and the
+inside\-chroot path would have been \(dq\&/\(dq\&.
 .IP 
-When \(dq\&use chroot\(dq\& is false or the inside-chroot path is not \(dq\&/\(dq\&, rsync will:
+When \(dq\&use chroot\(dq\& is false or the inside\-chroot path is not \(dq\&/\(dq\&, rsync will:
 (1) munge symlinks by
 default for security reasons (see \(dq\&munge symlinks\(dq\& for a way to turn this
 off, but only if you trust your users), (2) substitute leading slashes in
@@ -172,11 +178,11 @@ absolute paths with the module\(cq\&s path (so that options such as
 rooted in the module\(cq\&s \(dq\&path\(dq\& dir), and (3) trim \(dq\&..\(dq\& path elements from
 args if rsync believes they would escape the module hierarchy.
 The default for \(dq\&use chroot\(dq\& is true, and is the safer choice (especially
-if the module is not read-only).
+if the module is not read\-only).
 .IP 
 When this parameter is enabled, rsync will not attempt to map users and groups
 by name (by default), but instead copy IDs as though \fB\-\-numeric\-ids\fP had
-been specified.  In order to enable name-mapping, rsync needs to be able to
+been specified.  In order to enable name\-mapping, rsync needs to be able to
 use the standard library functions for looking up names and IDs (i.e.
 \f(CWgetpwuid()\fP
 , 
@@ -205,12 +211,12 @@ could abbreviate the list of users and groups.
 .IP "\fBnumeric ids\fP"
 Enabling this parameter disables the mapping
 of users and groups by name for the current daemon module.  This prevents
-the daemon from trying to load any user/group-related files or libraries.
+the daemon from trying to load any user/group\-related files or libraries.
 This enabling makes the transfer behave as if the client had passed
-the \fB\-\-numeric\-ids\fP command-line option.  By default, this parameter is
-enabled for chroot modules and disabled for non-chroot modules.
+the \fB\-\-numeric\-ids\fP command\-line option.  By default, this parameter is
+enabled for chroot modules and disabled for non\-chroot modules.
 .IP 
-A chroot-enabled module should not have this parameter enabled unless you\(cq\&ve
+A chroot\-enabled module should not have this parameter enabled unless you\(cq\&ve
 taken steps to ensure that the module has the necessary resources it needs
 to translate names, and that it is not possible for a user to change those
 resources.
@@ -220,34 +226,34 @@ This parameter tells rsync to modify
 all incoming symlinks in a way that makes them unusable but recoverable
 (see below).  This should help protect your files from user trickery when
 your daemon module is writable.  The default is disabled when \(dq\&use chroot\(dq\&
-is on and the inside-chroot path is \(dq\&/\(dq\&, otherwise it is enabled.
+is on and the inside\-chroot path is \(dq\&/\(dq\&, otherwise it is enabled.
 .IP 
-If you disable this parameter on a daemon that is not read-only, there
+If you disable this parameter on a daemon that is not read\-only, there
 are tricks that a user can play with uploaded symlinks to access
-daemon-excluded items (if your module has any), and, if \(dq\&use chroot\(dq\&
+daemon\-excluded items (if your module has any), and, if \(dq\&use chroot\(dq\&
 is off, rsync can even be tricked into showing or changing data that
-is outside the module\(cq\&s path (as access-permissions allow).
+is outside the module\(cq\&s path (as access\-permissions allow).
 .IP 
 The way rsync disables the use of symlinks is to prefix each one with
-the string \(dq\&/rsyncd-munged/\(dq\&.  This prevents the links from being used
+the string \(dq\&/rsyncd\-munged/\(dq\&.  This prevents the links from being used
 as long as that directory does not exist.  When this parameter is enabled,
 rsync will refuse to run if that path is a directory or a symlink to
 a directory.  When using the \(dq\&munge symlinks\(dq\& parameter in a chroot area
-that has an inside-chroot path of \(dq\&/\(dq\&, you should add \(dq\&/rsyncd-munged/\(dq\&
+that has an inside\-chroot path of \(dq\&/\(dq\&, you should add \(dq\&/rsyncd\-munged/\(dq\&
 to the exclude setting for the module so that
 a user can\(cq\&t try to create it.
 .IP 
-Note:  rsync makes no attempt to verify that any pre-existing symlinks in
+Note:  rsync makes no attempt to verify that any pre\-existing symlinks in
 the module\(cq\&s hierarchy are as safe as you want them to be (unless, of
 course, it just copied in the whole hierarchy).  If you setup an rsync
 daemon on a new area or locally add symlinks, you can manually protect your
-symlinks from being abused by prefixing \(dq\&/rsyncd-munged/\(dq\& to the start of
+symlinks from being abused by prefixing \(dq\&/rsyncd\-munged/\(dq\& to the start of
 every symlink\(cq\&s value.  There is a perl script in the support directory
-of the source code named \(dq\&munge-symlinks\(dq\& that can be used to add or remove
+of the source code named \(dq\&munge\-symlinks\(dq\& that can be used to add or remove
 this prefix from your symlinks.
 .IP 
 When this parameter is disabled on a writable module and \(dq\&use chroot\(dq\& is off
-(or the inside-chroot path is not \(dq\&/\(dq\&),
+(or the inside\-chroot path is not \(dq\&/\(dq\&),
 incoming symlinks will be modified to drop a leading slash and to remove \(dq\&..\(dq\&
 path elements that rsync believes will allow a symlink to escape the module\(cq\&s
 hierarchy.  There are tricky ways to work around this, though, so you had
@@ -259,12 +265,12 @@ module\(cq\&s filenames are stored.  If the client uses an \fB\-\-iconv\fP optio
 the daemon will use the value of the \(dq\&charset\(dq\& parameter regardless of the
 character set the client actually passed.  This allows the daemon to
 support charset conversion in a chroot module without extra files in the
-chroot area, and also ensures that name-translation is done in a consistent
+chroot area, and also ensures that name\-translation is done in a consistent
 manner.  If the \(dq\&charset\(dq\& parameter is not set, the \fB\-\-iconv\fP option is
 refused, just as if \(dq\&iconv\(dq\& had been specified via \(dq\&refuse options\(dq\&.
 .IP 
 If you wish to force users to always use \fB\-\-iconv\fP for a particular
-module, add \(dq\&no-iconv\(dq\& to the \(dq\&refuse options\(dq\& parameter.  Keep in mind
+module, add \(dq\&no\-iconv\(dq\& to the \(dq\&refuse options\(dq\& parameter.  Keep in mind
 that this will restrict access to your module to very new rsync clients.
 .IP 
 .IP "\fBmax connections\fP"
@@ -276,7 +282,7 @@ A negative value disables the module.
 See also the \(dq\&lock file\(dq\& parameter.
 .IP 
 .IP "\fBlog file\fP"
-When the \(dq\&log file\(dq\& parameter is set to a non-empty
+When the \(dq\&log file\(dq\& parameter is set to a non\-empty
 string, the rsync daemon will log messages to the indicated file rather
 than using syslog. This is particularly useful on systems (such as AIX)
 where 
@@ -285,9 +291,9 @@ doesn\(cq\&t work for chrooted programs.  The file is
 opened before 
 \f(CWchroot()\fP
 is called, allowing it to be placed outside
-the transfer.  If this value is set on a per-module basis instead of
+the transfer.  If this value is set on a per\-module basis instead of
 globally, the global log will still contain any authorization failures
-or config-file error messages.
+or config\-file error messages.
 .IP 
 If the daemon fails to open the specified file, it will fall back to
 using syslog and output an error about the failure.  (Note that the
@@ -301,7 +307,7 @@ defined on your system. Common names are auth, authpriv, cron, daemon,
 ftp, kern, lpr, mail, news, security, syslog, user, uucp, local0,
 local1, local2, local3, local4, local5, local6 and local7. The default
 is daemon.  This setting has no effect if the \(dq\&log file\(dq\& setting is a
-non-empty string (either set in the per-modules settings, or inherited
+non\-empty string (either set in the per\-modules settings, or inherited
 from the global settings).
 .IP 
 .IP "\fBmax verbosity\fP"
@@ -352,7 +358,7 @@ which is normally the group \(dq\&nobody\(dq\&.
 .IP 
 .IP "\fBfake super\fP"
 Setting \(dq\&fake super = yes\(dq\& for a module causes the
-daemon side to behave as if the \fB\-\-fake\-user\fP command-line option had
+daemon side to behave as if the \fB\-\-fake\-super\fP command\-line option had
 been specified.  This allows the full attributes of a file to be stored
 without having to have the daemon actually running as root.
 .IP 
@@ -360,7 +366,7 @@ without having to have the daemon actually running as root.
 The daemon has its own filter chain that determines what files
 it will let the client access.  This chain is not sent to the client and is
 independent of any filters the client may have specified.  Files excluded by
-the daemon filter chain (\fBdaemon-excluded\fP files) are treated as non-existent
+the daemon filter chain (\fBdaemon\-excluded\fP files) are treated as non\-existent
 if the client tries to pull them, are skipped with an error message if the
 client tries to push them (triggering exit code 23), and are never deleted from
 the module.  You can use daemon filters to prevent clients from downloading or
@@ -371,23 +377,23 @@ The daemon filter chain is built from the \(dq\&filter\(dq\&, \(dq\&include from
 \(dq\&exclude from\(dq\&, and \(dq\&exclude\(dq\& parameters, in that order of priority.  Anchored
 patterns are anchored at the root of the module.  To prevent access to an
 entire subtree, for example, \(dq\&/secret\(dq\&, you \fImust\fP exclude everything in the
-subtree; the easiest way to do this is with a triple-star pattern like
+subtree; the easiest way to do this is with a triple\-star pattern like
 \(dq\&/secret/***\(dq\&.
 .IP 
-The \(dq\&filter\(dq\& parameter takes a space-separated list of daemon filter rules,
+The \(dq\&filter\(dq\& parameter takes a space\-separated list of daemon filter rules,
 though it is smart enough to know not to split a token at an internal space in
-a rule (e.g. \(dq\&- /foo  \(em /bar\(dq\& is parsed as two rules).  You may specify one or
-more merge-file rules using the normal syntax.  Only one \(dq\&filter\(dq\& parameter can
+a rule (e.g. \(dq\&\- /foo  \- /bar\(dq\& is parsed as two rules).  You may specify one or
+more merge\-file rules using the normal syntax.  Only one \(dq\&filter\(dq\& parameter can
 apply to a given module in the config file, so put all the rules you want in a
-single parameter.  Note that per-directory merge-file rules do not provide as
+single parameter.  Note that per\-directory merge\-file rules do not provide as
 much protection as global rules, but they can be used to make \fB\-\-delete\fP work
-better during a client download operation if the per-dir merge files are
+better during a client download operation if the per\-dir merge files are
 included in the transfer and the client requests that they be used.
 .IP 
 .IP "\fBexclude\fP"
-This parameter takes a space-separated list of daemon
+This parameter takes a space\-separated list of daemon
 exclude patterns.  As with the client \fB\-\-exclude\fP option, patterns can be
-qualified with \(dq\&- \(dq\& or \(dq\&+ \(dq\& to explicitly indicate exclude/include.  Only one
+qualified with \(dq\&\- \(dq\& or \(dq\&+ \(dq\& to explicitly indicate exclude/include.  Only one
 \(dq\&exclude\(dq\& parameter can apply to a given module.  See the \(dq\&filter\(dq\& parameter
 for a description of how excluded files affect the daemon.
 .IP 
@@ -400,7 +406,7 @@ parameter.  Only one \(dq\&include\(dq\& parameter can apply to a given module. 
 This parameter specifies the name of a file
 on the daemon that contains daemon exclude patterns, one per line.  Only one
 \(dq\&exclude from\(dq\& parameter can apply to a given module; if you have multiple
-exclude-from files, you can specify them as a merge file in the \(dq\&filter\(dq\&
+exclude\-from files, you can specify them as a merge file in the \(dq\&filter\(dq\&
 parameter.  See the \(dq\&filter\(dq\& parameter for a description of how excluded files
 affect the daemon.
 .IP 
@@ -412,17 +418,17 @@ daemon.
 .IP 
 .IP "\fBincoming chmod\fP"
 This parameter allows you to specify a set of
-comma-separated chmod strings that will affect the permissions of all
+comma\-separated chmod strings that will affect the permissions of all
 incoming files (files that are being received by the daemon).  These
 changes happen after all other permission calculations, and this will
-even override destination-default and/or existing permissions when the
+even override destination\-default and/or existing permissions when the
 client does not specify \fB\-\-perms\fP.
 See the description of the \fB\-\-chmod\fP rsync option and the \fBchmod\fP(1)
 manpage for information on the format of this string.
 .IP 
 .IP "\fBoutgoing chmod\fP"
 This parameter allows you to specify a set of
-comma-separated chmod strings that will affect the permissions of all
+comma\-separated chmod strings that will affect the permissions of all
 outgoing files (files that are being sent out from the daemon).  These
 changes happen first, making the sent permissions appear to be different
 than those stored in the filesystem itself.  For instance, you could
@@ -433,7 +439,7 @@ manpage for information on the format of this string.
 .IP 
 .IP "\fBauth users\fP"
 This parameter specifies a comma and
-space-separated list of usernames that will be allowed to connect to
+space\-separated list of usernames that will be allowed to connect to
 this module. The usernames do not need to exist on the local
 system. The usernames may also contain shell wildcard characters. If
 \(dq\&auth users\(dq\& is set then the client will be challenged to supply a
@@ -443,9 +449,9 @@ usernames and passwords are stored in the file specified by the
 \(dq\&secrets file\(dq\& parameter. The default is for all users to be able to
 connect without a password (this is called \(dq\&anonymous rsync\(dq\&).
 .IP 
-See also the section entitled \(dq\&USING RSYNC-DAEMON FEATURES VIA A REMOTE
+See also the section entitled \(dq\&USING RSYNC\-DAEMON FEATURES VIA A REMOTE
 SHELL CONNECTION\(dq\& in \fBrsync\fP(1) for information on how handle an
-rsyncd.conf\-level username that differs from the remote-shell-level
+rsyncd.conf\-level username that differs from the remote\-shell\-level
 username when using a remote shell to connect to an rsync daemon.
 .IP 
 .IP "\fBsecrets file\fP"
@@ -504,7 +510,7 @@ then the client is allowed in.
 .RE
 
 .IP 
-Note IPv6 link-local addresses can have a scope in the address specification:
+Note IPv6 link\-local addresses can have a scope in the address specification:
 .IP 
 .RS 
 \f(CW    fe80::1%link1\fP
@@ -546,11 +552,11 @@ behavior.
 .IP "\fBignore nonreadable\fP"
 This tells the rsync daemon to completely
 ignore files that are not readable by the user. This is useful for
-public archives that may have some non-readable files among the
+public archives that may have some non\-readable files among the
 directories, and the sysadmin doesn\(cq\&t want those files to be seen at all.
 .IP 
 .IP "\fBtransfer logging\fP"
-This parameter enables per-file
+This parameter enables per\-file
 logging of downloads and uploads in a format somewhat similar to that
 used by ftp daemons.  The daemon always logs the transfer at the end, so
 if a transfer is aborted, no mention will be made in the log file.
@@ -560,7 +566,7 @@ If you want to customize the log lines, see the \(dq\&log format\(dq\& parameter
 .IP "\fBlog format\fP"
 This parameter allows you to specify the
 format used for logging file transfers when transfer logging is enabled.
-The format is a text string containing embedded single-character escape
+The format is a text string containing embedded single\-character escape
 sequences prefixed with a percent (%) character.  An optional numeric
 field width may also be specified between the percent and the escape
 letter (e.g. \(dq\&\fB%\-50n %8l %07p\fP\(dq\&).
@@ -571,7 +577,7 @@ is always prefixed when using the \(dq\&log file\(dq\& parameter.
 in the rsync source code distribution in the \(dq\&support\(dq\& subdirectory:
 rsyncstats.)
 .IP 
-The single-character escapes that are understood are as follows:
+The single\-character escapes that are understood are as follows:
 .IP 
 .RS 
 .IP o 
@@ -597,7 +603,7 @@ The single-character escapes that are understood are as follows:
 .IP o 
 %m the module name
 .IP o 
-%M the last-modified time of the file
+%M the last\-modified time of the file
 .IP o 
 %n the filename (short form; trailing \(dq\&/\(dq\& on dir)
 .IP o 
@@ -632,10 +638,10 @@ a 10 minute timeout).
 .IP 
 .IP "\fBrefuse options\fP"
 This parameter allows you to
-specify a space-separated list of rsync command line options that will
+specify a space\-separated list of rsync command line options that will
 be refused by your rsync daemon.
-You may specify the full option name, its one-letter abbreviation, or a
-wild-card string that matches multiple options.
+You may specify the full option name, its one\-letter abbreviation, or a
+wild\-card string that matches multiple options.
 For example, this would refuse \fB\-\-checksum\fP (\fB\-c\fP) and all the various
 delete options:
 .IP 
@@ -647,8 +653,8 @@ delete options:
 The reason the above refuses all delete options is that the options imply
 \fB\-\-delete\fP, and implied options are refused just like explicit options.
 As an additional safety feature, the refusal of \(dq\&delete\(dq\& also refuses
-\fBremove-source-files\fP when the daemon is the sender; if you want the latter
-without the former, instead refuse \(dq\&delete\-*\(dq\& \(em that refuses all the
+\fBremove\-source\-files\fP when the daemon is the sender; if you want the latter
+without the former, instead refuse \(dq\&delete\-*\(dq\& \-\- that refuses all the
 delete modes without affecting \fB\-\-remove\-source\-files\fP.
 .IP 
 When an option is refused, the daemon prints an error message and exits.
@@ -666,8 +672,8 @@ Compression is expensive in terms of CPU usage, so it
 is usually good to not try to compress files that won\(cq\&t compress well,
 such as already compressed files.
 .IP 
-The \(dq\&dont compress\(dq\& parameter takes a space-separated list of
-case-insensitive wildcard patterns. Any source filename matching one
+The \(dq\&dont compress\(dq\& parameter takes a space\-separated list of
+case\-insensitive wildcard patterns. Any source filename matching one
 of the patterns will not be compressed during transfer.
 .IP 
 See the \fB\-\-skip\-compress\fP parameter in the \fBrsync\fP(1) manpage for the list
@@ -675,13 +681,13 @@ of file suffixes that are not compressed by default.  Specifying a value
 for the \(dq\&dont compress\(dq\& parameter changes the default when the daemon is
 the sender.
 .IP 
-.IP "\fBpre-xfer exec\fP, \fBpost-xfer exec\fP"
+.IP "\fBpre\-xfer exec\fP, \fBpost\-xfer exec\fP"
 You may specify a command to be run
-before and/or after the transfer.  If the \fBpre-xfer exec\fP command fails, the
+before and/or after the transfer.  If the \fBpre\-xfer exec\fP command fails, the
 transfer is aborted before it begins.
 .IP 
 The following environment variables will be set, though some are
-specific to the pre-xfer or the post-xfer environment:
+specific to the pre\-xfer or the post\-xfer environment:
 .IP 
 .RS 
 .IP o 
@@ -697,21 +703,21 @@ specific to the pre-xfer or the post-xfer environment:
 .IP o 
 \fBRSYNC_PID\fP: A unique number for this transfer.
 .IP o 
-\fBRSYNC_REQUEST\fP: (pre-xfer only) The module/path info specified
+\fBRSYNC_REQUEST\fP: (pre\-xfer only) The module/path info specified
 by the user (note that the user can specify multiple source files,
 so the request can be something like \(dq\&mod/path1 mod/path2\(dq\&, etc.).
 .IP o 
-\fBRSYNC_ARG#\fP: (pre-xfer only) The pre-request arguments are set
+\fBRSYNC_ARG#\fP: (pre\-xfer only) The pre\-request arguments are set
 in these numbered values. RSYNC_ARG0 is always \(dq\&rsyncd\(dq\&, and the last
 value contains a single period.
 .IP o 
-\fBRSYNC_EXIT_STATUS\fP: (post-xfer only) the server side\(cq\&s exit value.
+\fBRSYNC_EXIT_STATUS\fP: (post\-xfer only) the server side\(cq\&s exit value.
 This will be 0 for a successful run, a positive value for an error that the
 server generated, or a \-1 if rsync failed to exit properly.  Note that an
 error that occurs on the client side does not currently get sent to the
 server side, so this is not the final exit status for the whole transfer.
 .IP o 
-\fBRSYNC_RAW_STATUS\fP: (post-xfer only) the raw exit value from 
+\fBRSYNC_RAW_STATUS\fP: (post\-xfer only) the raw exit value from 
 \f(CWwaitpid()\fP
 \&.
 .RE
@@ -726,8 +732,8 @@ module\(cq\&s uid/gid setting) without any chroot restrictions.
 .PP 
 The authentication protocol used in rsync is a 128 bit MD4 based
 challenge response system. This is fairly weak protection, though (with
-at least one brute-force hash-finding algorithm publicly available), so
-if you want really top-quality security, then I recommend that you run
+at least one brute\-force hash\-finding algorithm publicly available), so
+if you want really top\-quality security, then I recommend that you run
 rsync over ssh.  (Yes, a future version of rsync will switch over to a
 stronger hashing method.)
 .PP 
@@ -822,7 +828,7 @@ http://rsync.samba.org/
 .SH "VERSION"
 
 .PP 
-This man page is current for version 3.0.7 of rsync.
+This man page is current for version 3.0.9 of rsync.
 .PP 
 .SH "CREDITS"
 
@@ -838,7 +844,7 @@ http://rsync.samba.org/
 .PP 
 We would be delighted to hear from you if you like this program.
 .PP 
-This program uses the zlib compression library written by Jean-loup
+This program uses the zlib compression library written by Jean\-loup
 Gailly and Mark Adler.
 .PP 
 .SH "THANKS"

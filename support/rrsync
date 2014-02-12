@@ -31,7 +31,7 @@ die "$0: Restricted directory does not exist!\n" if $subdir ne '/' && !-d $subdi
 # command="rrsync logs/client" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAzGhEeNlPr...
 # command="rrsync -ro results" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAmkHG1WCjC...
 #
-# Format of the envrionment variables set by sshd:
+# Format of the environment variables set by sshd:
 # SSH_ORIGINAL_COMMAND=rsync --server          -vlogDtpr --partial . ARG # push
 # SSH_ORIGINAL_COMMAND=rsync --server --sender -vlogDtpr --partial . ARGS # pull
 # SSH_CONNECTION=client_addr client_port server_port
@@ -92,7 +92,6 @@ our %long_opt = (
   'max-size' => 1,
   'min-size' => 1,
   'modify-window' => 1,
-  'no-i-r' => 0,
   'no-implied-dirs' => 0,
   'no-r' => 0,
   'no-relative' => 0,
@@ -109,6 +108,7 @@ our %long_opt = (
   'size-only' => 0,
   'skip-compress' => 1,
   'specials' => 0,
+  'stats' => 0,
   'suffix' => 1,
   'super' => 0,
   'temp-dir' => 2,
@@ -175,10 +175,10 @@ while ($command =~ /((?:[^\s\\]+|\\.[^\s\\]*)+)/g) {
   } else {
     if ($subdir ne '/') {
       # Validate args to ensure they don't try to leave our restricted dir.
-      s#//+#/#g;
-      s#^/##;
-      s#^$#.#;
-      die "Do not use .. in any path!\n" if m#(^|/)\\?\.\\?\.(\\?/|$)#;
+      s{//+}{/}g;
+      s{^/}{};
+      s{^$}{.};
+      die "$0: do not use .. in any path!\n" if m{(^|/)\\?\.\\?\.(\\?/|$)};
     }
     push(@args, bsd_glob($_, GLOB_LIMIT|GLOB_NOCHECK|GLOB_BRACE|GLOB_QUOTE));
   }
@@ -205,10 +205,10 @@ sub check_arg
   my($opt, $arg, $type) = @_;
   $arg =~ s/\\(.)/$1/g;
   if ($subdir ne '/' && ($type == 3 || ($type == 2 && !$am_sender))) {
-    $arg =~ s#//#/#g;
+    $arg =~ s{//}{/}g;
     die "Do not use .. in --$opt; anchor the path at the root of your restricted dir.\n"
-      if $arg =~ m#(^|/)\.\.(/|$)#;
-    $arg =~ s#^/#$subdir/#;
+      if $arg =~ m{(^|/)\.\.(/|$)};
+    $arg =~ s{^/}{$subdir/};
   }
   $arg;
 }
