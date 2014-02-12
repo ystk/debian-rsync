@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
@@ -12,7 +12,7 @@
 /* Define to 1 if chown modifies symlinks. */
 #undef CHOWN_MODIFIES_SYMLINK
 
-/* Undefine if you don't want locale features. By default this is defined. */
+/* Undefine if you do not want locale features. By default this is defined. */
 #undef CONFIG_LOCALE
 
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
@@ -265,6 +265,12 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
+/* Define to 1 if you have the <netinet/in_systm.h> header file. */
+#undef HAVE_NETINET_IN_SYSTM_H
+
+/* Define to 1 if you have the <netinet/ip.h> header file. */
+#undef HAVE_NETINET_IP_H
+
 /* Define to 1 if you have the `nl_langinfo' function. */
 #undef HAVE_NL_LANGINFO
 
@@ -400,7 +406,7 @@
 /* Define to 1 if the system has the type `struct stat64'. */
 #undef HAVE_STRUCT_STAT64
 
-/* Define to 1 if `struct stat' is a member of `st_rdev'. */
+/* Define to 1 if `st_rdev' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_RDEV
 
 /* Define to 1 if you have the "struct utimbuf" type */
@@ -480,6 +486,9 @@
 /* Define to 1 if you have the `utime' function. */
 #undef HAVE_UTIME
 
+/* Define to 1 if you have the `utimensat' function. */
+#undef HAVE_UTIMENSAT
+
 /* Define to 1 if you have the `utimes' function. */
 #undef HAVE_UTIMES
 
@@ -551,6 +560,15 @@
 
 /* unprivileged user--e.g. nobody */
 #undef NOBODY_USER
+
+/* True if device files do not support xattrs */
+#undef NO_DEVICE_XATTRS
+
+/* True if special files do not support xattrs */
+#undef NO_SPECIAL_XATTRS
+
+/* True if symlinks do not support xattrs */
+#undef NO_SYMLINK_XATTRS
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
@@ -682,6 +700,9 @@
 #ifndef __cplusplus
 #undef inline
 #endif
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t
 
 /* type to use in place of socklen_t if not defined */
 #undef socklen_t

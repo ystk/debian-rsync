@@ -1,64 +1,56 @@
-NEWS for rsync 3.0.7 (31 Dec 2009)
+NEWS for rsync 3.0.9 (23 Sep 2011)
 Protocol: 30 (unchanged)
-Changes since 3.0.6:
+Changes since 3.0.8:
 
   BUG FIXES:
 
-    - Fixed a bogus free when using --xattrs with --backup.
+    - Fix a crash bug in checksum scanning when --inplace is used.
 
-    - Avoid an error when --dry-run  was trying to stat a prior hard-link file
-      that hasn't really been created.
+    - Fix a hang if a hard-linked file cannot be opened by the sender (e.g.
+      if it has no read permission).
 
-    - Fixed a problem with --compress (-z) where the receiving side could
-      return the error "inflate (token) returned -5".
+    - Fix preservation of a symlink's system xattrs (e.g. selinux) on Linux.
 
-    - Fixed a bug where --delete-during could delete in a directory before it
-      noticed that the sending side sent an I/O error for that directory (both
-      sides of the transfer must be at least 3.0.7).
+    - Fix a memory leak in the xattr code.
 
-    - Improved --skip-compress's error handling of bad character-sets and got
-      rid of a lingering debug fprintf().
+    - Fixed a bug with --delete-excluded when a filter merge file has a rule
+      that specifies a receiver-only side restriction.
 
-    - Fixed the daemon's conveyance of io_error value from the sender.
+    - Fix a bug with the modifying of unwritable directories.
 
-    - An rsync daemon use seteuid() (when available) if it used setuid().
+    - Fix --fake-super's interaction with --link-dest same-file comparisons.
 
-    - Get the permissions right on a --fake-super transferred directory that
-      needs more owner permissions to emulate root behavior.
+    - Fix the updating of the curr_dir buffer to avoid a duplicate slash.
 
-    - An absolute-path filter rule (i.e. with a '/' modifier) no longer loses
-      its modifier when sending the filter rules to the remote rsync.
+    - Fix the directory permissions on an implied dot-dir when using --relative
+      (e.g. /outside/path/././send/path).
 
-    - Improved the "--delete does not work without -r or -d" message.
+    - Fixed some too-long sleeping instances when using --bwlimit.
 
-    - Improved rsync's handling of --timeout to avoid a weird timeout case
-      where the sender could timeout even though it has recently written data
-      to the socket (but hasn't read data recently, due to the writing).
+    - Fixed when symlink ownership difference-checking gets compiled into
+      unchanged_attrs().
 
-    - Some misc manpage improvements.
+    - Improved the socket-error reporting when multiple protocols fail.
 
-    - Fixed the chmod-temp-dir testsuite on a system without /var/tmp.
+    - Fixed a case where a socket error could reference just-freed memory.
 
-    - Make sure that a timeout specified in the daemon's config is used as a
-      maximum timeout value when the user also specifies a timeout.
+    - Failing to use a password file that was specified on the command-line is
+      now a fatal error.
 
-    - Improved the error-exit reporting when rsync gets an error trying to
-      cleanup after an error:  the initial error is reported.
+    - Fix the non-root updating of directories that don't have the read and/or
+      execute permission.
 
-    - Improved configure's detection of IPv6 for solaris and cygwin.
+    - Make daemon-excluded file errors more error-like.
 
-    - The AIX sysacls routines will now return ENOSYS if ENOTSUP is missing.
+    - Fix a compilation issue on older C compilers (due to a misplaced var
+      declaration).
 
-    - Made our (only used if missing) getaddrinfo() routine use inet_pton()
-      (which we also provide) instead of inet_aton().
+    - Make configure avoid finding socketpair on cygwin.
 
-    - The exit-related debug messages now mention the program's role so it is
-      clear who output what message.
+    - Avoid trying to reference SO_BROADCAST if the OS doesn't support it.
 
-  DEVELOPER RELATED:
+    - Fix some issues with the post-processing of the man pages.
 
-    - Got rid of type-punned compiler warnings output by newer gcc versions.
+    - Fixed the user home-dir handling in the support/lsh script.
 
-    - The Makefile now ensures that proto.h will be rebuilt if config.h changes.
-
-    - The testsuite no longer uses "id -u", so it works better on solaris.
+    - Some minor manpage improvements.
