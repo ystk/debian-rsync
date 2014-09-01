@@ -1,4 +1,4 @@
-.TH "rsync" "1" "23 Sep 2011" "" ""
+.TH "rsync" "1" "22 Jun 2014" "" ""
 .SH "NAME"
 rsync \- a fast, versatile, remote (and local) file\-copying tool
 .SH "SYNOPSIS"
@@ -120,7 +120,10 @@ This would transfer all files matching the pattern *.c from the
 current directory to the directory src on the machine foo. If any of
 the files already exist on the remote system then the rsync
 remote\-update protocol is used to update the file by sending only the
-differences. See the tech report for details.
+differences in the data.  Note that the expansion of wildcards on the
+commandline (*.c) into a list of files is handled by the shell before
+it runs rsync and not by rsync itself (exactly the same as all other
+posix\-style programs).
 .PP 
 .RS 
 \f(CWrsync \-avz foo:src/bar /data/tmp\fP
@@ -407,6 +410,9 @@ to the detailed description below for a complete description.
 .nf 
 
  \-v, \-\-verbose               increase verbosity
+     \-\-info=FLAGS            fine\-grained informational verbosity
+     \-\-debug=FLAGS           fine\-grained debug verbosity
+     \-\-msgs2stderr           special output handling for debugging
  \-q, \-\-quiet                 suppress non\-error messages
      \-\-no\-motd               suppress daemon\-mode MOTD (see caveat)
  \-c, \-\-checksum              skip based on checksum, not mod\-time & size
@@ -427,6 +433,7 @@ to the detailed description below for a complete description.
  \-L, \-\-copy\-links            transform symlink into referent file/dir
      \-\-copy\-unsafe\-links     only \(dq\&unsafe\(dq\& symlinks are transformed
      \-\-safe\-links            ignore symlinks that point outside the tree
+     \-\-munge\-links           munge symlinks to make them safer
  \-k, \-\-copy\-dirlinks         transform symlink to dir into referent dir
  \-K, \-\-keep\-dirlinks         treat symlinked dir on receiver as dir
  \-H, \-\-hard\-links            preserve hard links
@@ -442,9 +449,11 @@ to the detailed description below for a complete description.
  \-D                          same as \-\-devices \-\-specials
  \-t, \-\-times                 preserve modification times
  \-O, \-\-omit\-dir\-times        omit directories from \-\-times
+ \-J, \-\-omit\-link\-times       omit symlinks from \-\-times
      \-\-super                 receiver attempts super\-user activities
      \-\-fake\-super            store/recover privileged attrs using xattrs
  \-S, \-\-sparse                handle sparse files efficiently
+     \-\-preallocate           allocate dest files before writing
  \-n, \-\-dry\-run               perform a trial run with no changes made
  \-W, \-\-whole\-file            copy files whole (w/o delta\-xfer algorithm)
  \-x, \-\-one\-file\-system       don'\&t cross filesystem boundaries
@@ -461,6 +470,8 @@ to the detailed description below for a complete description.
      \-\-delete\-delay          find deletions during, delete after
      \-\-delete\-after          receiver deletes after transfer, not during
      \-\-delete\-excluded       also delete excluded files from dest dirs
+     \-\-ignore\-missing\-args   ignore missing source args without error
+     \-\-delete\-missing\-args   delete missing source args from destination
      \-\-ignore\-errors         delete even if there are I/O errors
      \-\-force                 force deletion of dirs even if not empty
      \-\-max\-delete=NUM        don'\&t delete more than NUM files
@@ -471,6 +482,9 @@ to the detailed description below for a complete description.
      \-\-delay\-updates         put all updated files into place at end
  \-m, \-\-prune\-empty\-dirs      prune empty directory chains from file\-list
      \-\-numeric\-ids           don'\&t map uid/gid values by user/group name
+     \-\-usermap=STRING        custom username mapping
+     \-\-groupmap=STRING       custom groupname mapping
+     \-\-chown=USER:GROUP      simple username/groupname mapping
      \-\-timeout=SECONDS       set I/O timeout in seconds
      \-\-contimeout=SECONDS    set daemon connection timeout in seconds
  \-I, \-\-ignore\-times          don'\&t skip files that match size and time
@@ -499,18 +513,20 @@ to the detailed description below for a complete description.
      \-\-port=PORT             specify double\-colon alternate port number
      \-\-sockopts=OPTIONS      specify custom TCP options
      \-\-blocking\-io           use blocking I/O for the remote shell
+     \-\-outbuf=N|L|B          set out buffering to None, Line, or Block
      \-\-stats                 give some file\-transfer stats
  \-8, \-\-8\-bit\-output          leave high\-bit chars unescaped in output
  \-h, \-\-human\-readable        output numbers in a human\-readable format
      \-\-progress              show progress during transfer
  \-P                          same as \-\-partial \-\-progress
  \-i, \-\-itemize\-changes       output a change\-summary for all updates
+ \-M, \-\-remote\-option=OPTION  send OPTION to the remote side only
      \-\-out\-format=FORMAT     output updates using the specified FORMAT
      \-\-log\-file=FILE         log what we'\&re doing to the specified FILE
      \-\-log\-file\-format=FMT   log updates using the specified FMT
      \-\-password\-file=FILE    read daemon\-access password from FILE
      \-\-list\-only             list the files instead of copying them
-     \-\-bwlimit=KBPS          limit I/O bandwidth; KBytes per second
+     \-\-bwlimit=RATE          limit socket I/O bandwidth
      \-\-write\-batch=FILE      write a batched update to FILE
      \-\-only\-write\-batch=FILE like \-\-write\-batch but w/o updating dest
      \-\-read\-batch=FILE       read a batched update from FILE
@@ -530,8 +546,9 @@ accepted:
 
      \-\-daemon                run as an rsync daemon
      \-\-address=ADDRESS       bind to the specified address
-     \-\-bwlimit=KBPS          limit I/O bandwidth; KBytes per second
+     \-\-bwlimit=RATE          limit socket I/O bandwidth
      \-\-config=FILE           specify alternate rsyncd.conf file
+ \-M, \-\-dparam=OVERRIDE       override global daemon config parameter
      \-\-no\-detach             do not detach from the parent
      \-\-port=PORT             listen on alternate port number
      \-\-log\-file=FILE         override the \(dq\&log file\(dq\& setting
@@ -577,14 +594,82 @@ information on what files are being skipped and slightly more
 information at the end. More than two \fB\-v\fP options should only be used if
 you are debugging rsync.
 .IP 
-Note that the names of the transferred files that are output are done using
-a default \fB\-\-out\-format\fP of \(dq\&%n%L\(dq\&, which tells you just the name of the
-file and, if the item is a link, where it points.  At the single \fB\-v\fP
-level of verbosity, this does not mention when a file gets its attributes
-changed.  If you ask for an itemized list of changed attributes (either
-\fB\-\-itemize\-changes\fP or adding \(dq\&%i\(dq\& to the \fB\-\-out\-format\fP setting), the
-output (on the client) increases to mention all items that are changed in
-any way.  See the \fB\-\-out\-format\fP option for more details.
+In a modern rsync, the \fB\-v\fP option is equivalent to the setting of groups
+of \fB\-\-info\fP and \fB\-\-debug\fP options.  You can choose to use these newer
+options in addition to, or in place of using \fB\-\-verbose\fP, as any
+fine\-grained settings override the implied settings of \fB\-v\fP.  Both
+\fB\-\-info\fP and \fB\-\-debug\fP have a way to ask for help that tells you
+exactly what flags are set for each increase in verbosity.
+.IP 
+However, do keep in mind that a daemon\(cq\&s \(dq\&max verbosity\(dq\& setting will limit how
+high of a level the various individual flags can be set on the daemon side.
+For instance, if the max is 2, then any info and/or debug flag that is set to
+a higher value than what would be set by \fB\-vv\fP will be downgraded to the
+\fB\-vv\fP level in the daemon\(cq\&s logging.
+.IP 
+.IP "\fB\-\-info=FLAGS\fP"
+This option lets you have fine\-grained control over the
+information
+output you want to see.  An individual flag name may be followed by a level
+number, with 0 meaning to silence that output, 1 being the default output
+level, and higher numbers increasing the output of that flag (for those
+that support higher levels).  Use
+\fB\-\-info=help\fP
+to see all the available flag names, what they output, and what flag names
+are added for each increase in the verbose level.  Some examples:
+.IP 
+.nf 
+    rsync \-a \-\-info=progress2 src/ dest/
+    rsync \-avv \-\-info=stats2,misc1,flist0 src/ dest/ 
+.fi 
+
+.IP 
+Note that \fB\-\-info=name\fP\(cq\&s output is affected by the \fB\-\-out\-format\fP and
+\fB\-\-itemize\-changes\fP (\fB\-i\fP) options.  See those options for more
+information on what is output and when.
+.IP 
+This option was added to 3.1.0, so an older rsync on the server side might
+reject your attempts at fine\-grained control (if one or more flags needed
+to be send to the server and the server was too old to understand them).
+See also the \(dq\&max verbosity\(dq\& caveat above when dealing with a daemon.
+.IP 
+.IP "\fB\-\-debug=FLAGS\fP"
+This option lets you have fine\-grained control over the debug
+output you want to see.  An individual flag name may be followed by a level
+number, with 0 meaning to silence that output, 1 being the default output
+level, and higher numbers increasing the output of that flag (for those
+that support higher levels).  Use
+\fB\-\-debug=help\fP
+to see all the available flag names, what they output, and what flag names
+are added for each increase in the verbose level.  Some examples:
+.IP 
+.nf 
+    rsync \-avvv \-\-debug=none src/ dest/
+    rsync \-avA \-\-del \-\-debug=del2,acl src/ dest/ 
+.fi 
+
+.IP 
+Note that some debug messages will only be output when \fB\-\-msgs2stderr\fP is
+specified, especially those pertaining to I/O and buffer debugging.
+.IP 
+This option was added to 3.1.0, so an older rsync on the server side might
+reject your attempts at fine\-grained control (if one or more flags needed
+to be send to the server and the server was too old to understand them).
+See also the \(dq\&max verbosity\(dq\& caveat above when dealing with a daemon.
+.IP 
+.IP "\fB\-\-msgs2stderr\fP"
+This option changes rsync to send all its output
+directly to stderr rather than to send messages to the client side via the
+protocol (which normally outputs info messages via stdout).  This is mainly
+intended for debugging in order to avoid changing the data sent via the
+protocol, since the extra protocol data can change what is being tested.
+Keep in mind that a daemon connection does not have a stderr channel to send
+messages back to the client side, so if you are doing any daemon\-transfer
+debugging using this option, you should start up a daemon using \fB\-\-no\-detach\fP
+so that you can see the stderr output on the daemon side.
+.IP 
+This option has the side\-effect of making stderr output get line\-buffered so
+that the merging of the output of 3 programs happens in a more readable manner.
 .IP 
 .IP "\fB\-q, \-\-quiet\fP"
 This option decreases the amount of information you
@@ -836,7 +921,7 @@ the destination and have a modified time that is newer than the source
 file.  (If an existing destination file has a modification time equal to the
 source file\(cq\&s, it will be updated if the sizes are different.)
 .IP 
-Note that this does not affect the copying of symlinks or other special
+Note that this does not affect the copying of dirs, symlinks, or other special
 files.  Also, a difference of file format between the sender and receiver
 is always considered to be important enough for an update, no matter what
 date is on the objects.  In other words, if the source has a directory
@@ -965,6 +1050,26 @@ This tells rsync to ignore any symbolic links
 which point outside the copied tree. All absolute symlinks are
 also ignored. Using this option in conjunction with \fB\-\-relative\fP may
 give unexpected results.
+.IP 
+.IP "\fB\-\-munge\-links\fP"
+This option tells rsync to (1) modify all symlinks on
+the receiving side in a way that makes them unusable but recoverable (see
+below), or (2) to unmunge symlinks on the sending side that had been stored in
+a munged state.  This is useful if you don\(cq\&t quite trust the source of the data
+to not try to slip in a symlink to a unexpected place.
+.IP 
+The way rsync disables the use of symlinks is to prefix each one with the
+string \(dq\&/rsyncd\-munged/\(dq\&.  This prevents the links from being used as long as
+that directory does not exist.  When this option is enabled, rsync will refuse
+to run if that path is a directory or a symlink to a directory.
+.IP 
+The option only affects the client side of the transfer, so if you need it to
+affect the server, specify it via \fB\-\-remote\-option\fP.  (Note that in a local
+transfer, the client side is the sender.)
+.IP 
+This option has no affect on a daemon, since the daemon configures whether it
+wants munged symlinks via its \(dq\&munge symlinks\(dq\& parameter.  See also the
+\(dq\&munge\-symlinks\(dq\& perl script in the support directory of the source code.
 .IP 
 .IP "\fB\-k, \-\-copy\-dirlinks\fP"
 This option causes the sending side to treat
@@ -1182,6 +1287,13 @@ consistent executability across all bits:
 .RE
 
 .IP 
+Using octal mode numbers is also allowed:
+.IP 
+.RS 
+\-\-chmod=D2775,F664
+.RE
+
+.IP 
 It is also legal to specify multiple \fB\-\-chmod\fP options, as each
 additional option is just appended to the list of changes to make.
 .IP 
@@ -1241,6 +1353,21 @@ it is preserving modification times (see \fB\-\-times\fP).  If NFS is sharing
 the directories on the receiving side, it is a good idea to use \fB\-O\fP.
 This option is inferred if you use \fB\-\-backup\fP without \fB\-\-backup\-dir\fP.
 .IP 
+This option also has the side\-effect of avoiding early creation of directories
+in incremental recursion copies.  The default \fB\-\-inc\-recursive\fP copying
+normally does an early\-create pass of all the sub\-directories in a parent
+directory in order for it to be able to then set the modify time of the parent
+directory right away (without having to delay that until a bunch of recursive
+copying has finished).  This early\-create idiom is not necessary if directory
+modify times are not being preserved, so it is skipped.  Since early\-create
+directories don\(cq\&t have accurate mode, mtime, or ownership, the use of this
+option can help when someone wants to avoid these partially\-finished
+directories.
+.IP 
+.IP "\fB\-J, \-\-omit\-link\-times\fP"
+This tells rsync to omit symlinks when
+it is preserving modification times (see \fB\-\-times\fP).
+.IP 
 .IP "\fB\-\-super\fP"
 This tells the receiving side to attempt super\-user
 activities even if the receiving rsync wasn\(cq\&t run by the super\-user.  These
@@ -1269,19 +1396,19 @@ This is a good way to backup data without using a super\-user, and to store
 ACLs from incompatible systems.
 .IP 
 The \fB\-\-fake\-super\fP option only affects the side where the option is used.
-To affect the remote side of a remote\-shell connection, specify an rsync
-path:
+To affect the remote side of a remote\-shell connection, use the
+\fB\-\-remote\-option\fP (\fB\-M\fP) option:
 .IP 
 .RS 
-\f(CW  rsync \-av \-\-rsync\-path=\(dq\&rsync \-\-fake\-super\(dq\& /src/ host:/dest/\fP
+\f(CW  rsync \-av \-M\-\-fake\-super /src/ host:/dest/\fP
 .RE
 
 .IP 
-Since there is only one \(dq\&side\(dq\& in a local copy, this option affects both
-the sending and receiving of files.  You\(cq\&ll need to specify a copy using
-\(dq\&localhost\(dq\& if you need to avoid this, possibly using the \(dq\&lsh\(dq\& shell
-script (from the support directory) as a substitute for an actual remote
-shell (see \fB\-\-rsh\fP).
+For a local copy, this option affects both the source and the destination.
+If you wish a local copy to enable this option just for the destination
+files, specify \fB\-M\-\-fake\-super\fP.  If you wish a local copy to enable
+this option just for the source files, combine \fB\-\-fake\-super\fP with
+\fB\-M\-\-super\fP.
 .IP 
 This option is overridden by both \fB\-\-super\fP and \fB\-\-no\-super\fP.
 .IP 
@@ -1291,6 +1418,18 @@ See also the \(dq\&fake super\(dq\& setting in the daemon\(cq\&s rsyncd.conf fil
 Try to handle sparse files efficiently so they take
 up less space on the destination.  Conflicts with \fB\-\-inplace\fP because it\(cq\&s
 not possible to overwrite data in a sparse fashion.
+.IP 
+.IP "\fB\-\-preallocate\fP"
+This tells the receiver to allocate each destination
+file to its eventual size before writing data to the file.  Rsync will only use
+the real filesystem\-level preallocation support provided by Linux\(cq\&s
+\fBfallocate\fP(2) system call or Cygwin\(cq\&s \fBposix_fallocate\fP(3), not the slow
+glibc implementation that writes a zero byte into each block.
+.IP 
+Without this option, larger files may not be entirely contiguous on the
+filesystem, but with this option rsync will probably copy more slowly.  If the
+destination is not an extent\-supporting filesystem (such as ext4, xfs, NTFS,
+etc.), this option may have no positive effect at all.
 .IP 
 .IP "\fB\-n, \-\-dry\-run\fP"
 This makes rsync perform a trial run that doesn\(cq\&t
@@ -1378,6 +1517,9 @@ a different directory, you should use a naming idiom that lets rsync avoid
 transferring files that are not yet finished (e.g. name the file \(dq\&foo.new\(dq\& when
 it is written, rename it to \(dq\&foo\(dq\& when it is done, and then use the option
 \fB\-\-exclude='\&*.new'\&\fP for the rsync transfer).
+.IP 
+Starting with 3.1.0, rsync will skip the sender\-side removal (and output an
+error) if the file\(cq\&s size or modify time has not stayed unchanged.
 .IP 
 .IP "\fB\-\-delete\fP"
 This tells rsync to delete extraneous files from the
@@ -1468,6 +1610,25 @@ this way on the receiver, and for a way to protect files from
 \fB\-\-delete\-excluded\fP.
 See \fB\-\-delete\fP (which is implied) for more details on file\-deletion.
 .IP 
+.IP "\fB\-\-ignore\-missing\-args\fP"
+When rsync is first processing the explicitly
+requested source files (e.g. command\-line arguments or \fB\-\-files\-from\fP
+entries), it is normally an error if the file cannot be found.  This option
+suppresses that error, and does not try to transfer the file.  This does not
+affect subsequent vanished\-file errors if a file was initially found to be
+present and later is no longer there.
+.IP 
+.IP "\fB\-\-delete\-missing\-args\fP"
+This option takes the behavior of (the implied)
+\fB\-\-ignore\-missing\-args\fP option a step farther:  each missing arg will become
+a deletion request of the corresponding destination file on the receiving side
+(should it exist).  If the destination file is a non\-empty directory, it will
+only be successfully deleted if \-\-force or \-\-delete are in effect.  Other than
+that, this option is independent of any other type of delete processing.
+.IP 
+The missing source files are represented by special file\-list entries which
+display as a \(dq\&*missing\(dq\& entry in the \fB\-\-list\-only\fP output.
+.IP 
 .IP "\fB\-\-ignore\-errors\fP"
 Tells \fB\-\-delete\fP to go ahead and delete files
 even when there are I/O errors.
@@ -1483,15 +1644,17 @@ using \fB\-\-delete\-after\fP, and it used to be non\-functional unless the
 .IP 
 .IP "\fB\-\-max\-delete=NUM\fP"
 This tells rsync not to delete more than NUM
-files or directories.  If that limit is exceeded, a warning is output
-and rsync exits with an error code of 25 (new for 3.0.0).
+files or directories.  If that limit is exceeded, all further deletions are
+skipped through the end of the transfer.  At the end, rsync outputs a warning
+(including a count of the skipped deletions) and exits with an error code
+of 25 (unless some more important error condition also occurred).
 .IP 
-Also new for version 3.0.0, you may specify \fB\-\-max\-delete=0\fP to be warned
+Beginning with version 3.0.0, you may specify \fB\-\-max\-delete=0\fP to be warned
 about any extraneous files in the destination without removing any of them.
 Older clients interpreted this as \(dq\&unlimited\(dq\&, so if you don\(cq\&t know what
 version the client is, you can use the less obvious \fB\-\-max\-delete=\-1\fP as
 a backward\-compatible way to specify that no deletions be allowed (though
-older versions didn\(cq\&t warn when the limit was exceeded).
+really old versions didn\(cq\&t warn when the limit was exceeded).
 .IP 
 .IP "\fB\-\-max\-size=SIZE\fP"
 This tells rsync to avoid transferring any
@@ -1514,11 +1677,15 @@ be offset by one byte in the indicated direction.
 Examples: \-\-max\-size=1.5mb\-1 is 1499999 bytes, and \-\-max\-size=2g+1 is
 2147483649 bytes.
 .IP 
+Note that rsync versions prior to 3.1.0 did not allow \fB\-\-max\-size=0\fP.
+.IP 
 .IP "\fB\-\-min\-size=SIZE\fP"
 This tells rsync to avoid transferring any
 file that is smaller than the specified SIZE, which can help in not
 transferring small, junk files.
 See the \fB\-\-max\-size\fP option for a description of SIZE and other information.
+.IP 
+Note that rsync versions prior to 3.1.0 did not allow \fB\-\-min\-size=0\fP.
 .IP 
 .IP "\fB\-B, \-\-block\-size=BLOCKSIZE\fP"
 This forces the block size used in
@@ -1579,6 +1746,43 @@ machine for use with the \fB\-\-relative\fP option.  For instance:
 \f(CW    rsync \-avR \-\-rsync\-path=\(dq\&cd /a/b && rsync\(dq\& host:c/d /e/\fP
 .RE
 
+.IP 
+.IP "\fB\-M, \-\-remote\-option=OPTION\fP"
+This option is used for more advanced
+situations where you want certain effects to be limited to one side of the
+transfer only.  For instance, if you want to pass \fB\-\-log\-file=FILE\fP and
+\fB\-\-fake\-super\fP to the remote system, specify it like this:
+.IP 
+.RS 
+\f(CW    rsync \-av \-M \-\-log\-file=foo \-M\-\-fake\-super src/ dest/\fP
+.RE
+
+.IP 
+If you want to have an option affect only the local side of a transfer when
+it normally affects both sides, send its negation to the remote side.  Like
+this:
+.IP 
+.RS 
+\f(CW    rsync \-av \-x \-M\-\-no\-x src/ dest/\fP
+.RE
+
+.IP 
+Be cautious using this, as it is possible to toggle an option that will cause
+rsync to have a different idea about what data to expect next over the socket,
+and that will make it fail in a cryptic fashion.
+.IP 
+Note that it is best to use a separate \fB\-\-remote\-option\fP for each option you
+want to pass.  This makes your useage compatible with the \fB\-\-protect\-args\fP
+option.  If that option is off, any spaces in your remote options will be split
+by the remote shell unless you take steps to protect them.
+.IP 
+When performing a local transfer, the \(dq\&local\(dq\& side is the sender and the
+\(dq\&remote\(dq\& side is the receiver.
+.IP 
+Note some versions of the popt option\-parsing library have a bug in them that
+prevents you from using an adjacent arg with an equal in it next to a short
+option letter (e.g. \f(CW\-M\-\-log\-file=/tmp/foo\fP.  If this bug affects your
+version of popt, you can use the version of popt that is included with rsync.
 .IP 
 .IP "\fB\-C, \-\-cvs\-exclude\fP"
 This is a useful shorthand for excluding a
@@ -1776,11 +1980,28 @@ side will also be translated
 from the local to the remote character\-set.  The translation happens before
 wild\-cards are expanded.  See also the \fB\-\-files\-from\fP option.
 .IP 
+You may also control this option via the RSYNC_PROTECT_ARGS environment
+variable.  If this variable has a non\-zero value, this option will be enabled
+by default, otherwise it will be disabled by default.  Either state is
+overridden by a manually specified positive or negative version of this option
+(note that \fB\-\-no\-s\fP and \fB\-\-no\-protect\-args\fP are the negative versions).
+Since this option was first introduced in 3.0.0, you\(cq\&ll need to make sure it\(cq\&s
+disabled if you ever need to interact with a remote rsync that is older than
+that.
+.IP 
+Rsync can also be configured (at build time) to have this option enabled by
+default (with is overridden by both the environment and the command\-line).
+This option will eventually become a new default setting at some
+as\-yet\-undetermined point in the future.
+.IP 
 .IP "\fB\-T, \-\-temp\-dir=DIR\fP"
 This option instructs rsync to use DIR as a
 scratch directory when creating temporary copies of the files transferred
 on the receiving side.  The default behavior is to create each temporary
 file in the same directory as the associated destination file.
+Beginning with rsync 3.1.1, the temp\-file names inside the specified DIR will
+not be prefixed with an extra dot (though they will still have a random suffix
+added).
 .IP 
 This option is most often used when the receiving disk partition does not
 have enough free space to hold a copy of the largest file in the transfer.
@@ -1816,6 +2037,10 @@ looks in the same directory as the destination file for either a file that
 has an identical size and modified\-time, or a similarly\-named file.  If
 found, rsync uses the fuzzy basis file to try to speed up the transfer.
 .IP 
+If the option is repeated, the fuzzy scan will also be done in any matching
+alternate destination directories that are specified via \fB\-\-compare\-dest\fP,
+\fB\-\-copy\-dest\fP, or \fB\-\-link\-dest\fP.
+.IP 
 Note that the use of the \fB\-\-delete\fP option might get rid of any potential
 fuzzy\-match files, so either use \fB\-\-delete\-after\fP or specify some
 filename exclusions if you need to prevent this.
@@ -1828,6 +2053,8 @@ directory).  If a file is found in \fIDIR\fP that is identical to the
 sender\(cq\&s file, the file will NOT be transferred to the destination
 directory.  This is useful for creating a sparse backup of just files that
 have changed from an earlier backup.
+This option is typically used to copy into an empty (or newly created)
+directory.
 .IP 
 Beginning in version 2.6.4, multiple \fB\-\-compare\-dest\fP directories may be
 provided, which will cause rsync to search the list in the order specified
@@ -1839,6 +2066,10 @@ selected to try to speed up the transfer.
 .IP 
 If \fIDIR\fP is a relative path, it is relative to the destination directory.
 See also \fB\-\-copy\-dest\fP and \fB\-\-link\-dest\fP.
+.IP 
+NOTE: beginning with version 3.1.0, rsync will remove a file from a non\-empty
+destination hierarchy if an exact match is found in one of the compare\-dest
+hierarchies (making the end result more closely match a fresh copy).
 .IP 
 .IP "\fB\-\-copy\-dest=DIR\fP"
 This option behaves like \fB\-\-compare\-dest\fP, but
@@ -1882,10 +2113,11 @@ If a match is not found, a basis file from one of the \fIDIR\fPs will be
 selected to try to speed up the transfer.
 .IP 
 This option works best when copying into an empty destination hierarchy, as
-rsync treats existing files as definitive (so it never looks in the link\-dest
-dirs when a destination file already exists), and as malleable (so it might
-change the attributes of a destination file, which affects all the hard\-linked
-versions).
+existing files may get their attributes tweaked, and that can affect alternate
+destination files via hard\-links.  Also, itemizing of changes can get a bit
+muddled.  Note that prior to version 3.1.0, an alternate\-directory exact match
+would never be found (nor linked into the destination) when a destination file
+already exists.
 .IP 
 Note that if you combine this option with \fB\-\-ignore\-times\fP, rsync will not
 link any files together because it only links identical files together as a
@@ -1908,7 +2140,20 @@ being transmitted \-\- something that is useful over a slow connection.
 Note that this option typically achieves better compression ratios than can
 be achieved by using a compressing remote shell or a compressing transport
 because it takes advantage of the implicit information in the matching data
-blocks that are not explicitly sent over the connection.
+blocks that are not explicitly sent over the connection.  This matching\-data
+compression comes at a cost of CPU, though, and can be disabled by repeating
+the \fB\-z\fP option, but only if both sides are at least version 3.1.1.
+.IP 
+Note that if your version of rsync was compiled with an external zlib (instead
+of the zlib that comes packaged with rsync) then it will not support the
+old\-style compression, only the new\-style (repeated\-option) compression.  In
+the future this new\-style compression will likely become the default.
+.IP 
+The client rsync requests new\-style compression on the server via the
+\fB\-\-new\-compress\fP option, so if you see that option rejected it means that
+the server is not new enough to support \fB\-zz\fP.  Rsync also accepts the
+\fB\-\-old\-compress\fP option for a future time when new\-style compression
+becomes the default.
 .IP 
 See the \fB\-\-skip\-compress\fP option for the default list of file suffixes
 that will not be compressed.
@@ -1943,20 +2188,31 @@ The default list of suffixes that will not be compressed is this (in this
 version of rsync):
 .IP 
 \fB7z\fP
+\fBace\fP
 \fBavi\fP
 \fBbz2\fP
 \fBdeb\fP
+\fBgpg\fP
 \fBgz\fP
 \fBiso\fP
 \fBjpeg\fP
 \fBjpg\fP
+\fBlz\fP
+\fBlzma\fP
+\fBlzo\fP
 \fBmov\fP
 \fBmp3\fP
 \fBmp4\fP
 \fBogg\fP
+\fBpng\fP
+\fBrar\fP
 \fBrpm\fP
+\fBrzip\fP
 \fBtbz\fP
 \fBtgz\fP
+\fBtlz\fP
+\fBtxz\fP
+\fBxz\fP
 \fBz\fP
 \fBzip\fP
 .IP 
@@ -1981,6 +2237,65 @@ from the source system is used instead.  See also the comments on the
 \(dq\&use chroot\(dq\& setting in the rsyncd.conf manpage for information on how
 the chroot setting affects rsync\(cq\&s ability to look up the names of the
 users and groups and what you can do about it.
+.IP 
+.IP "\fB\-\-usermap=STRING, \-\-groupmap=STRING\fP"
+These options allow you to
+specify users and groups that should be mapped to other values by the
+receiving side.  The \fBSTRING\fP is one or more \fBFROM\fP:\fBTO\fP pairs of
+values separated by commas.  Any matching \fBFROM\fP value from the sender is
+replaced with a \fBTO\fP value from the receiver.  You may specify usernames
+or user IDs for the \fBFROM\fP and \fBTO\fP values, and the \fBFROM\fP value may
+also be a wild\-card string, which will be matched against the sender\(cq\&s
+names (wild\-cards do NOT match against ID numbers, though see below for
+why a \(cq\&*\(cq\& matches everything).  You may instead specify a range of ID
+numbers via an inclusive range: LOW\-HIGH.  For example:
+.IP 
+.nf 
+  \-\-usermap=0\-99:nobody,wayne:admin,*:normal \-\-groupmap=usr:1,1:usr
+.fi 
+
+.IP 
+The first match in the list is the one that is used.  You should specify
+all your user mappings using a single \fB\-\-usermap\fP option, and/or all
+your group mappings using a single \fB\-\-groupmap\fP option.
+.IP 
+Note that the sender\(cq\&s name for the 0 user and group are not transmitted
+to the receiver, so you should either match these values using a 0, or use
+the names in effect on the receiving side (typically \(dq\&root\(dq\&).  All other
+\fBFROM\fP names match those in use on the sending side.  All \fBTO\fP names
+match those in use on the receiving side.
+.IP 
+Any IDs that do not have a name on the sending side are treated as having an
+empty name for the purpose of matching.  This allows them to be matched via
+a \(dq\&*\(dq\& or using an empty name.  For instance:
+.IP 
+.nf 
+  \-\-usermap=:nobody \-\-groupmap=*:nobody
+.fi 
+
+.IP 
+When the \fB\-\-numeric\-ids\fP option is used, the sender does not send any
+names, so all the IDs are treated as having an empty name.  This means that
+you will need to specify numeric \fBFROM\fP values if you want to map these
+nameless IDs to different values.
+.IP 
+For the \fB\-\-usermap\fP option to have any effect, the \fB\-o\fP (\fB\-\-owner\fP)
+option must be used (or implied), and the receiver will need to be running
+as a super\-user (see also the \fB\-\-fake\-super\fP option).  For the \fB\-\-groupmap\fP
+option to have any effect, the \fB\-g\fP (\fB\-\-groups\fP) option must be used
+(or implied), and the receiver will need to have permissions to set that
+group.
+.IP 
+.IP "\fB\-\-chown=USER:GROUP\fP"
+This option forces all files to be owned by USER
+with group GROUP.  This is a simpler interface than using \fB\-\-usermap\fP and
+\fB\-\-groupmap\fP directly, but it is implemented using those options internally,
+so you cannot mix them.  If either the USER or GROUP is empty, no mapping for
+the omitted user/group will occur.  If GROUP is empty, the trailing colon may
+be omitted, but if USER is empty, a leading colon must be supplied.
+.IP 
+If you specify \(dq\&\-\-chown=foo:bar, this is exactly the same as specifying
+\(dq\&\-\-usermap=*:foo \-\-groupmap=*:bar\(dq\&, only easier.
 .IP 
 .IP "\fB\-\-timeout=TIMEOUT\fP"
 This option allows you to set a maximum I/O
@@ -2023,6 +2338,14 @@ a remote shell transport.  If the remote shell is either rsh or remsh,
 rsync defaults to using
 blocking I/O, otherwise it defaults to using non\-blocking I/O.  (Note that
 ssh prefers non\-blocking I/O.)
+.IP 
+.IP "\fB\-\-outbuf=MODE\fP"
+This sets the output buffering mode.  The mode can be
+None (aka Unbuffered), Line, or Block (aka Full).  You may specify as little
+as a single letter for the mode, and use upper or lower case.
+.IP 
+The main use of this option is to change Full buffering to Line buffering
+when rsync\(cq\&s output is going to a file or pipe.
 .IP 
 .IP "\fB\-i, \-\-itemize\-changes\fP"
 Requests a simple itemized list of the
@@ -2122,13 +2445,13 @@ This allows you to specify exactly what the
 rsync client outputs to the user on a per\-update basis.  The format is a
 text string containing embedded single\-character escape sequences prefixed
 with a percent (%) character.   A default format of \(dq\&%n%L\(dq\& is assumed if
-\fB\-v\fP is specified (which reports the name
+either \fB\-\-info=name\fP or \fB\-v\fP is specified (this tells you just the name
 of the file and, if the item is a link, where it points).  For a full list
 of the possible escape characters, see the \(dq\&log format\(dq\& setting in the
 rsyncd.conf manpage.
 .IP 
-Specifying the \fB\-\-out\-format\fP option
-will mention each file, dir, etc. that gets updated in a significant
+Specifying the \fB\-\-out\-format\fP option implies the \fB\-\-info=name\fP option,
+which will mention each file, dir, etc. that gets updated in a significant
 way (a transferred file, a recreated symlink/device, or a touched
 directory).  In addition, if the itemize\-changes escape (%i) is included in
 the string (e.g. if the \fB\-\-itemize\-changes\fP option was used), the logging
@@ -2155,7 +2478,7 @@ Here\(cq\&s a example command that requests the remote side to log what is
 happening:
 .IP 
 .nf 
-  rsync \-av \-\-rsync\-path=\(dq\&rsync \-\-log\-file=/tmp/rlog\(dq\& src/ dest/
+  rsync \-av \-\-remote\-option=\-\-log\-file=/tmp/rlog src/ dest/
 .fi 
 
 .IP 
@@ -2176,17 +2499,34 @@ is \(cq\&%i %n%L\(cq\&.
 .IP "\fB\-\-stats\fP"
 This tells rsync to print a verbose set of statistics
 on the file transfer, allowing you to tell how effective rsync\(cq\&s delta\-transfer
-algorithm is for your data.
+algorithm is for your data.  This option is equivalent to \fB\-\-info=stats2\fP
+if combined with 0 or 1 \fB\-v\fP options, or \fB\-\-info=stats3\fP if combined
+with 2 or more \fB\-v\fP options.
 .IP 
 The current statistics are as follows: 
 .RS 
 .IP o 
 \fBNumber of files\fP is the count of all \(dq\&files\(dq\& (in the generic
-sense), which includes directories, symlinks, etc.
+sense), which includes directories, symlinks, etc.  The total count will
+be followed by a list of counts by filetype (if the total is non\-zero).
+For example: \(dq\&(reg: 5, dir: 3, link: 2, dev: 1, special: 1)\(dq\& lists the
+totals for regular files, directories, symlinks, devices, and special
+files.  If any of value is 0, it is completely omitted from the list.
 .IP o 
-\fBNumber of files transferred\fP is the count of normal files that
-were updated via rsync\(cq\&s delta\-transfer algorithm, which does not include created
-dirs, symlinks, etc.
+\fBNumber of created files\fP is the count of how many \(dq\&files\(dq\& (generic
+sense) were created (as opposed to updated).  The total count will be
+followed by a list of counts by filetype (if the total is non\-zero).
+.IP o 
+\fBNumber of deleted files\fP is the count of how many \(dq\&files\(dq\& (generic
+sense) were created (as opposed to updated).  The total count will be
+followed by a list of counts by filetype (if the total is non\-zero).
+Note that this line is only output if deletions are in effect, and only
+if protocol 31 is being used (the default for rsync 3.1.x).
+.IP o 
+\fBNumber of regular files transferred\fP is the count of normal files
+that were updated via rsync\(cq\&s delta\-transfer algorithm, which does not
+include dirs, symlinks, etc.  Note that rsync 3.1.0 added the word
+\(dq\&regular\(dq\& into this heading.
 .IP o 
 \fBTotal file size\fP is the total sum of all file sizes in the transfer.
 This does not count any size for directories or special files, but does
@@ -2237,10 +2577,25 @@ escaped unless it is followed by a hash and 3 digits (0\-9).
 .IP 
 .IP "\fB\-h, \-\-human\-readable\fP"
 Output numbers in a more human\-readable format.
-This makes big numbers output using larger units, with a K, M, or G suffix.  If
-this option was specified once, these units are K (1000), M (1000*1000), and
-G (1000*1000*1000); if the option is repeated, the units are powers of 1024
-instead of 1000.
+There are 3 possible levels:  (1) output numbers with a separator between each
+set of 3 digits (either a comma or a period, depending on if the decimal point
+is represented by a period or a comma); (2) output numbers in units of 1000
+(with a character suffix for larger units \-\- see below); (3) output numbers in
+units of 1024.
+.IP 
+The default is human\-readable level 1.  Each \fB\-h\fP option increases the level
+by one.  You can take the level down to 0 (to output numbers as pure digits) by
+specifing the \fB\-\-no\-human\-readable\fP (\fB\-\-no\-h\fP) option.
+.IP 
+The unit letters that are appended in levels 2 and 3 are: K (kilo), M (mega),
+G (giga), or T (tera).  For example, a 1234567\-byte file would output as 1.23M
+in level\-2 (assuming that a period is your local decimal point).
+.IP 
+Backward compatibility note:  versions of rsync prior to 3.1.0 do not support
+human\-readable level 1, and they default to level 0.  Thus, specifying one or
+two \fB\-h\fP options will behave in a comparable manner in old and new versions
+as long as you didn\(cq\&t specify a \fB\-\-no\-h\fP option prior to one or more \fB\-h\fP
+options.  See the \fB\-\-list\-only\fP option for one difference.
 .IP 
 .IP "\fB\-\-partial\fP"
 By default, rsync will delete any partially
@@ -2380,7 +2735,9 @@ in place of the hide\-filter (if that is more natural to you).
 This option tells rsync to print information
 showing the progress of the transfer. This gives a bored user
 something to watch.
-Implies \fB\-\-verbose\fP if it wasn\(cq\&t already specified.
+With a modern rsync this is the same as specifying
+\fB\-\-info=flist2,name,progress\fP, but any user\-supplied settings for those
+info flags takes precedence (e.g. \(dq\&\-\-info=flist0 \-\-progress\(dq\&).
 .IP 
 While rsync is transferring a regular file, it updates a progress line that
 looks like this:
@@ -2406,27 +2763,45 @@ When the file transfer finishes, rsync replaces the progress line with a
 summary line that looks like this:
 .IP 
 .nf 
-     1238099 100%  146.38kB/s    0:00:08  (xfer#5, to\-check=169/396)
+      1,238,099 100%  146.38kB/s    0:00:08  (xfr#5, to\-chk=169/396)
 .fi 
 
 .IP 
-In this example, the file was 1238099 bytes long in total, the average rate
+In this example, the file was 1,238,099 bytes long in total, the average rate
 of transfer for the whole file was 146.38 kilobytes per second over the 8
 seconds that it took to complete, it was the 5th transfer of a regular file
 during the current rsync session, and there are 169 more files for the
 receiver to check (to see if they are up\-to\-date or not) remaining out of
 the 396 total files in the file\-list.
 .IP 
+In an incremental recursion scan, rsync won\(cq\&t know the total number of files
+in the file\-list until it reaches the ends of the scan, but since it starts to
+transfer files during the scan, it will display a line with the text \(dq\&ir\-chk\(dq\&
+(for incremental recursion check) instead of \(dq\&to\-chk\(dq\& until the point that it
+knows the full size of the list, at which point it will switch to using
+\(dq\&to\-chk\(dq\&.  Thus, seeing \(dq\&ir\-chk\(dq\& lets you know that the total count of files
+in the file list is still going to increase (and each time it does, the count
+of files left to check  will increase by the number of the files added to the
+list).
+.IP 
 .IP "\fB\-P\fP"
 The \fB\-P\fP option is equivalent to \fB\-\-partial\fP \fB\-\-progress\fP.  Its
 purpose is to make it much easier to specify these two options for a long
 transfer that may be interrupted.
 .IP 
-.IP "\fB\-\-password\-file\fP"
-This option allows you to provide a password in a
-file for accessing an rsync daemon.  The file must not be world readable.
-It should contain just the password as the first line of the file (all
-other lines are ignored).
+There is also a \fB\-\-info=progress2\fP option that outputs statistics based
+on the whole transfer, rather than individual files.  Use this flag without
+outputting a filename (e.g. avoid \fB\-v\fP or specify \fB\-\-info=name0\fP if you
+want to see how the transfer is doing without scrolling the screen with a
+lot of names.  (You don\(cq\&t need to specify the \fB\-\-progress\fP option in
+order to use \fB\-\-info=progress2\fP.)
+.IP 
+.IP "\fB\-\-password\-file=FILE\fP"
+This option allows you to provide a password for
+accessing an rsync daemon via a file or via standard input if \fBFILE\fP is
+\fB\-\fP.  The file should contain just the password on the first line (all other
+lines are ignored).  Rsync will exit with an error if \fBFILE\fP is world
+readable or if a root\-run rsync command finds a non\-root\-owned file.
 .IP 
 This option does not supply a password to a remote shell transport such as
 ssh; to learn how to do that, consult the remote shell\(cq\&s documentation.
@@ -2451,6 +2826,14 @@ without using this option.  For example:
 .fi 
 
 .IP 
+Starting with rsync 3.1.0, the sizes output by \fB\-\-list\-only\fP are affected
+by the \fB\-\-human\-readable\fP option.  By default they will contain digit
+separators, but higher levels of readability will output the sizes with
+unit suffixes.  Note also that the column width for the size output has
+increased from 11 to 14 characters for all human\-readable levels.  Use
+\fB\-\-no\-h\fP if you want just digits in the sizes, and the old column width
+of 11 characters.
+.IP 
 Compatibility note:  when requesting a remote listing of files from an rsync
 that is version 2.6.3 or older, you may encounter an error if you ask for a
 non\-recursive listing.  This is because a file listing implies the \fB\-\-dirs\fP
@@ -2459,14 +2842,28 @@ avoid this problem, either specify the \fB\-\-no\-dirs\fP option (if you don\(cq
 need to expand a directory\(cq\&s content), or turn on recursion and exclude
 the content of subdirectories: \fB\-r \-\-exclude='\&/*/*'\&\fP.
 .IP 
-.IP "\fB\-\-bwlimit=KBPS\fP"
-This option allows you to specify a maximum
-transfer rate in kilobytes per second. This option is most effective when
-using rsync with large files (several megabytes and up). Due to the nature
-of rsync transfers, blocks of data are sent, then if rsync determines the
-transfer was too fast, it will wait before sending the next data block. The
-result is an average transfer rate equaling the specified limit. A value
-of zero specifies no limit.
+.IP "\fB\-\-bwlimit=RATE\fP"
+This option allows you to specify the maximum transfer
+rate for the data sent over the socket, specified in units per second.  The
+RATE value can be suffixed with a string to indicate a size multiplier, and may
+be a fractional value (e.g.  \(dq\&\fB\-\-bwlimit=1.5m\fP\(dq\&).  If no suffix is specified,
+the value will be assumed to be in units of 1024 bytes (as if \(dq\&K\(dq\& or \(dq\&KiB\(dq\& had
+been appended).  See the \fB\-\-max\-size\fP option for a description of all the
+available suffixes. A value of zero specifies no limit.
+.IP 
+For backward\-compatibility reasons, the rate limit will be rounded to the
+nearest KiB unit, so no rate smaller than 1024 bytes per second is possible.
+.IP 
+Rsync writes data over the socket in blocks, and this option both limits the
+size of the blocks that rsync writes, and tries to keep the average transfer
+rate at the requested limit.  Some \(dq\&burstiness\(dq\& may be seen where rsync writes
+out a block of data and then sleeps to bring the average rate into compliance.
+.IP 
+Due to the internal buffering of data, the \fB\-\-progress\fP option may not be an
+accurate reflection on how fast the data is being sent.  This is because some
+files can show up as being rapidly sent when the data is quickly buffered,
+while other can show up as very slow when the flushing of the output buffer
+occurs.  This may be fixed in a future version.
 .IP 
 .IP "\fB\-\-write\-batch=FILE\fP"
 Record a file that can later be applied to
@@ -2548,20 +2945,19 @@ will have no effect.  The \fB\-\-version\fP output will tell you if this
 is the case.
 .IP 
 .IP "\fB\-\-checksum\-seed=NUM\fP"
-Set the checksum seed to the integer
-NUM.  This 4 byte checksum seed is included in each block and file
-checksum calculation.  By default the checksum seed is generated
-by the server and defaults to the current 
+Set the checksum seed to the integer NUM.  This 4
+byte checksum seed is included in each block and MD4 file checksum calculation
+(the more modern MD5 file checksums don\(cq\&t use a seed).  By default the checksum
+seed is generated by the server and defaults to the current 
 \f(CWtime()\fP
-\&.  This option
-is used to set a specific checksum seed, which is useful for
-applications that want repeatable block and file checksums, or
-in the case where the user wants a more random checksum seed.
-Setting NUM to 0 causes rsync to use the default of 
+\&.  This
+option is used to set a specific checksum seed, which is useful for
+applications that want repeatable block checksums, or in the case where the
+user wants a more random checksum seed.  Setting NUM to 0 causes rsync to use
+the default of 
 \f(CWtime()\fP
 for checksum seed.
-
-.PP 
+.IP 
 .SH "DAEMON OPTIONS"
 
 .PP 
@@ -2586,12 +2982,11 @@ allows you to specify a specific IP address (or hostname) to bind to.  This
 makes virtual hosting possible in conjunction with the \fB\-\-config\fP option.
 See also the \(dq\&address\(dq\& global option in the rsyncd.conf manpage.
 .IP 
-.IP "\fB\-\-bwlimit=KBPS\fP"
-This option allows you to specify a maximum
-transfer rate in kilobytes per second for the data the daemon sends.
-The client can still specify a smaller \fB\-\-bwlimit\fP value, but their
-requested value will be rounded down if they try to exceed it.  See the
-client version of this option (above) for some extra details.
+.IP "\fB\-\-bwlimit=RATE\fP"
+This option allows you to specify the maximum transfer
+rate for the data the daemon sends over the socket.  The client can still
+specify a smaller \fB\-\-bwlimit\fP value, but no larger value will be allowed.
+See the client version of this option (above) for some extra details.
 .IP 
 .IP "\fB\-\-config=FILE\fP"
 This specifies an alternate config file than
@@ -2599,6 +2994,18 @@ the default.  This is only relevant when \fB\-\-daemon\fP is specified.
 The default is /etc/rsyncd.conf unless the daemon is running over
 a remote shell program and the remote user is not the super\-user; in that case
 the default is rsyncd.conf in the current directory (typically $HOME).
+.IP 
+.IP "\fB\-M, \-\-dparam=OVERRIDE\fP"
+This option can be used to set a daemon\-config
+parameter when starting up rsync in daemon mode.  It is equivalent to adding
+the parameter at the end of the global settings prior to the first module\(cq\&s
+definition.  The parameter names can be specified without spaces, if you so
+desire.  For instance:
+.IP 
+.nf 
+    rsync \-\-daemon \-M pidfile=/path/rsync.pid 
+.fi 
+
 .IP 
 .IP "\fB\-\-no\-detach\fP"
 When running as a daemon, this option instructs
@@ -2769,6 +3176,10 @@ a \(cq\&[\(cq\& introduces a character class, such as [a\-z] or [[:alpha:]].
 .IP o 
 in a wildcard pattern, a backslash can be used to escape a wildcard
 character, but it is matched literally when no wildcards are present.
+This means that there is an extra level of backslash removal when a
+pattern contains wildcard characters compared to a pattern that has none.
+e.g. if you add a wildcard to \(dq\&foo\ebar\(dq\& (which matches the backslash) you
+would need to use \(dq\&foo\e\ebar*\(dq\& to avoid the \(dq\&\eb\(dq\& becoming just \(dq\&b\(dq\&.
 .IP o 
 if the pattern contains a / (not counting a trailing /) or a \(dq\&**\(dq\&,
 then it is matched against the full pathname, including any leading
@@ -3478,6 +3889,10 @@ more details.
 .IP "\fBRSYNC_ICONV\fP"
 Specify a default \fB\-\-iconv\fP setting using this
 environment variable. (First supported in 3.0.0.)
+.IP "\fBRSYNC_PROTECT_ARGS\fP"
+Specify a non\-zero numeric value if you want the
+\fB\-\-protect\-args\fP option to be enabled by default, or a zero value to make
+sure that it is disabled by default. (First supported in 3.1.0.)
 .IP "\fBRSYNC_RSH\fP"
 The RSYNC_RSH environment variable allows you to
 override the default shell used as the transport for rsync.  Command line
@@ -3531,7 +3946,7 @@ http://rsync.samba.org/
 .SH "VERSION"
 
 .PP 
-This man page is current for version 3.0.9 of rsync.
+This man page is current for version 3.1.1 of rsync.
 .PP 
 .SH "INTERNAL OPTIONS"
 
@@ -3547,7 +3962,7 @@ ssh login.
 .SH "CREDITS"
 
 .PP 
-rsync is distributed under the GNU public license.  See the file
+rsync is distributed under the GNU General Public License.  See the file
 COPYING for details.
 .PP 
 A WEB site is available at
