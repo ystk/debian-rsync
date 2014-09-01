@@ -1,3 +1,66 @@
+rsync (3.1.1-2) unstable; urgency=low
+
+  * hardening flags were not applied correctly, debian/rules modified thanks
+    to patch from Simon Ruderich.
+    closes:#754412
+
+ -- Paul Slootman <paul@debian.org>  Sat, 09 Aug 2014 11:02:31 +0200
+
+rsync (3.1.1-1) unstable; urgency=low
+
+  * new upstream release
+    Includes config.* update, closes:#714782
+    Includes preallocate patch, closes:#649914
+  * Bumped Standards-Version to 3.9.5.0 (no change necessary).
+  * revert to using included zlib as there have been numerous reports of failed
+    transfers when using -z with the separate zlib.
+  * use the now included systemd file instead of our own copy.
+  * use hardening=+all flags, thanks to hint from waldeck@gmx.de
+  * add noatime patch which adds the --noatime option, which adds the O_NOATIME
+    flag when opening files, to no update the access time on kernels that
+    support that (linux 2.6.8 and later).
+    closes:#738708,#244168
+  * changed backtick usage in rules for CFLAGS and LDFLAGS to $(shell ...)
+    closes:#699165
+  * added autofs to Should-Start: in init.d script.
+    closes:#730149
+  * added README.Debian file to explain how to get the daemon running.
+    closes:#589529
+  * simplify init.d nice parameter checking.
+    closes:#647145
+
+ -- Paul Slootman <paul@debian.org>  Thu, 10 Jul 2014 14:28:11 +0200
+
+rsync (3.1.0-3) unstable; urgency=high
+
+  * fix for CVE-2014-2855 - rsync denial of service
+    a remote client can send an invalid username and cause an infinite CPU
+    loop on the server child process.
+    closes:#744791
+  * added upstream signature for uscan usage
+  * changed package source format to 3.0 (quilt)
+
+ -- Paul Slootman <paul@debian.org>  Wed, 16 Apr 2014 16:21:23 +0200
+
+rsync (3.1.0-2) unstable; urgency=low
+
+  * fix build failure if zlib1g-dev package is not installed;
+    solved by building without the included zlib source and adding a
+    build-depends on zlib1g-dev >= 1:1.2.8
+    closes:32379
+
+ -- Paul Slootman <paul@debian.org>  Sun, 27 Oct 2013 12:01:10 +0100
+
+rsync (3.1.0-1) unstable; urgency=low
+
+  * new upstream release.
+  * Bumped Standards-Version to 3.9.4.0 (no change necessary).
+  * Patches cast--1-size_t.diff, delete-delay.diff, manpages.GPL.diff,
+    partial-timestamp.diff, progress-cursor-pos.diff, rsyncd.conf.5.comment.diff
+    no longer needed (integrated into upstream source).
+
+ -- Paul Slootman <paul@debian.org>  Mon, 30 Sep 2013 17:19:55 +0200
+
 rsync (3.0.9-4) unstable; urgency=low
 
   * mark rsync package as Multi-Arch: foreign.

@@ -601,15 +601,21 @@ ac_includes_default="\
 
 ac_header_list=
 ac_subst_vars='LTLIBOBJS
+STUNNEL4
+STUNNEL
 MAKE_MAN
+BUILD_ZLIB
 BUILD_POPT
 CC_SHOBJ_FLAG
 OBJ_RESTORE
 OBJ_SAVE
 ALLOCA
 LIBOBJS
+FAKEROOT_PATH
+SHELL_PATH
 HAVE_YODL2MAN
 HAVE_REMSH
+MKDIR_P
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
@@ -677,6 +683,8 @@ enable_debug
 enable_profile
 enable_maintainer_mode
 with_included_popt
+with_included_zlib
+with_protected_args
 with_rsync_path
 with_rsyncd_conf
 with_rsh
@@ -1327,6 +1335,8 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-included-popt    use bundled popt library, not from system
+  --with-included-zlib    use bundled zlib library, not from system
+  --with-protected-args   make --protected-args option the default
   --with-rsync-path=PATH  set default --rsync-path to PATH (default: rsync)
   --with-rsyncd-conf=PATH set configuration file for rsync server to PATH
                           (default: /etc/rsyncd.conf)
@@ -2419,7 +2429,7 @@ ac_config_headers="$ac_config_headers config.h"
 
 
 
-RSYNC_VERSION=3.0.9
+RSYNC_VERSION=3.1.1
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: Configuring rsync $RSYNC_VERSION" >&5
 $as_echo "$as_me: Configuring rsync $RSYNC_VERSION" >&6;}
@@ -3706,6 +3716,48 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a thread-safe mkdir -p" >&5
+$as_echo_n "checking for a thread-safe mkdir -p... " >&6; }
+if test -z "$MKDIR_P"; then
+  if ${ac_cv_path_mkdir+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/opt/sfw/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in mkdir gmkdir; do
+	 for ac_exec_ext in '' $ac_executable_extensions; do
+	   { test -f "$as_dir/$ac_prog$ac_exec_ext" && $as_test_x "$as_dir/$ac_prog$ac_exec_ext"; } || continue
+	   case `"$as_dir/$ac_prog$ac_exec_ext" --version 2>&1` in #(
+	     'mkdir (GNU coreutils) '* | \
+	     'mkdir (coreutils) '* | \
+	     'mkdir (fileutils) '4.1*)
+	       ac_cv_path_mkdir=$as_dir/$ac_prog$ac_exec_ext
+	       break 3;;
+	   esac
+	 done
+       done
+  done
+IFS=$as_save_IFS
+
+fi
+
+  test -d ./--version && rmdir ./--version
+  if test "${ac_cv_path_mkdir+set}" = set; then
+    MKDIR_P="$ac_cv_path_mkdir -p"
+  else
+    # As a last resort, use the slow shell script.  Don't cache a
+    # value for MKDIR_P within a source directory, because that will
+    # break other packages using the cache if that directory is
+    # removed, or if the value is a relative name.
+    MKDIR_P="$ac_install_sh -d"
+  fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR_P" >&5
+$as_echo "$MKDIR_P" >&6; }
+
    case $ac_cv_prog_cc_stdc in #(
   no) :
     ac_cv_prog_cc_c99=no; ac_cv_prog_cc_c89=no ;; #(
@@ -4048,6 +4100,27 @@ fi
 
 
 
+# Check whether --with-included-zlib was given.
+if test "${with_included_zlib+set}" = set; then :
+  withval=$with_included_zlib;
+fi
+
+
+
+# Check whether --with-protected-args was given.
+if test "${with_protected_args+set}" = set; then :
+  withval=$with_protected_args;
+fi
+
+if test x"$with_protected_args" = x"yes"; then
+
+cat >>confdefs.h <<_ACEOF
+#define RSYNC_USE_PROTECTED_ARGS 1
+_ACEOF
+
+fi
+
+
 # Check whether --with-rsync-path was given.
 if test "${with_rsync_path+set}" = set; then :
   withval=$with_rsync_path;  RSYNC_PATH="$with_rsync_path"
@@ -4193,7 +4266,93 @@ fi
 
 if test x$HAVE_YODL2MAN = x1; then
     MAKE_MAN=man
+else
+    MAKE_MAN=man-copy
 fi
+
+# Some programs on solaris are only found in /usr/xpg4/bin (or work better than others versions).
+# Extract the first word of "sh", so it can be a program name with args.
+set dummy sh; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SHELL_PATH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SHELL_PATH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SHELL_PATH="$SHELL_PATH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in /usr/xpg4/bin$PATH_SEPARATOR$PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_SHELL_PATH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_SHELL_PATH" && ac_cv_path_SHELL_PATH="/bin/sh"
+  ;;
+esac
+fi
+SHELL_PATH=$ac_cv_path_SHELL_PATH
+if test -n "$SHELL_PATH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SHELL_PATH" >&5
+$as_echo "$SHELL_PATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "fakeroot", so it can be a program name with args.
+set dummy fakeroot; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FAKEROOT_PATH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FAKEROOT_PATH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FAKEROOT_PATH="$FAKEROOT_PATH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in /usr/xpg4/bin$PATH_SEPARATOR$PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_FAKEROOT_PATH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_FAKEROOT_PATH" && ac_cv_path_FAKEROOT_PATH="/usr/bin/fakeroot"
+  ;;
+esac
+fi
+FAKEROOT_PATH=$ac_cv_path_FAKEROOT_PATH
+if test -n "$FAKEROOT_PATH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FAKEROOT_PATH" >&5
+$as_echo "$FAKEROOT_PATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 
 
 # Check whether --with-nobody-group was given.
@@ -5362,7 +5521,8 @@ for ac_header in sys/fcntl.h sys/select.h fcntl.h sys/time.h sys/unistd.h \
     sys/un.h sys/attr.h mcheck.h arpa/inet.h arpa/nameser.h locale.h \
     netdb.h malloc.h float.h limits.h iconv.h libcharset.h langinfo.h \
     sys/acl.h acl/libacl.h attr/xattr.h sys/xattr.h sys/extattr.h \
-    popt.h popt/popt.h netinet/in_systm.h netinet/ip.h
+    popt.h popt/popt.h linux/falloc.h netinet/in_systm.h netinet/ip.h \
+    zlib.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -6150,11 +6310,59 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-ac_fn_c_check_member "$LINENO" "struct stat" "st_rdev" "ac_cv_member_struct_stat_st_rdev" "$ac_includes_default"
+ac_fn_c_check_member "$LINENO" "struct stat" "st_rdev" "ac_cv_member_struct_stat_st_rdev" "
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+"
 if test "x$ac_cv_member_struct_stat_st_rdev" = xyes; then :
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_STRUCT_STAT_ST_RDEV 1
+_ACEOF
+
+
+fi
+ac_fn_c_check_member "$LINENO" "struct stat" "st_mtimensec" "ac_cv_member_struct_stat_st_mtimensec" "
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+"
+if test "x$ac_cv_member_struct_stat_st_mtimensec" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STAT_ST_MTIMENSEC 1
+_ACEOF
+
+
+fi
+ac_fn_c_check_member "$LINENO" "struct stat" "st_mtim.tv_nsec" "ac_cv_member_struct_stat_st_mtim_tv_nsec" "
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+"
+if test "x$ac_cv_member_struct_stat_st_mtim_tv_nsec" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC 1
 _ACEOF
 
 
@@ -7448,8 +7656,8 @@ for ac_func in waitpid wait4 getcwd strdup chown chmod lchmod mknod mkfifo \
     strlcat strlcpy strtol mallinfo getgroups setgroups geteuid getegid \
     setlocale setmode open64 lseek64 mkstemp64 mtrace va_copy __va_copy \
     seteuid strerror putenv iconv_open locale_charset nl_langinfo getxattr \
-    extattr_get_link sigaction sigprocmask setattrlist \
-    utimensat
+    extattr_get_link sigaction sigprocmask setattrlist getgrouplist \
+    initgroups utimensat posix_fallocate attropen setvbuf
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -7470,6 +7678,93 @@ if test "x$ac_cv_func_libiconv_open" = xyes; then :
 fi
 
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for useable fallocate" >&5
+$as_echo_n "checking for useable fallocate... " >&6; }
+if ${rsync_cv_have_fallocate+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <fcntl.h>
+#include <sys/types.h>
+int
+main ()
+{
+fallocate(0, 0, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  rsync_cv_have_fallocate=yes
+else
+  rsync_cv_have_fallocate=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $rsync_cv_have_fallocate" >&5
+$as_echo "$rsync_cv_have_fallocate" >&6; }
+if test x"$rsync_cv_have_fallocate" = x"yes"; then
+
+$as_echo "#define HAVE_FALLOCATE 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SYS_fallocate" >&5
+$as_echo_n "checking for SYS_fallocate... " >&6; }
+if ${rsync_cv_have_sys_fallocate+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/syscall.h>
+#include <sys/types.h>
+int
+main ()
+{
+syscall(SYS_fallocate, 0, 0, (loff_t)0, (loff_t)0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  rsync_cv_have_sys_fallocate=yes
+else
+  rsync_cv_have_sys_fallocate=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $rsync_cv_have_sys_fallocate" >&5
+$as_echo "$rsync_cv_have_sys_fallocate" >&6; }
+if test x"$rsync_cv_have_sys_fallocate" = x"yes"; then
+
+$as_echo "#define HAVE_SYS_FALLOCATE 1" >>confdefs.h
+
+fi
+
+if test x"$ac_cv_func_posix_fallocate" = x"yes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether posix_fallocate is efficient" >&5
+$as_echo_n "checking whether posix_fallocate is efficient... " >&6; }
+    case $host_os in
+    *cygwin*)
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_EFFICIENT_POSIX_FALLOCATE 1" >>confdefs.h
+
+	;;
+    *)
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	;;
+    esac
+fi
+
 
 for ac_func in getpgrp tcgetpgrp
 do :
@@ -7620,6 +7915,7 @@ else
     main() {
 	unlink(FILENAME);
 	if (symlink("conftest.no-such", FILENAME) < 0) abort();
+	unlink(FILENAME "2");
 	if (link(FILENAME, FILENAME "2") < 0) exit(1);
 	exit(0);
     }
@@ -7663,6 +7959,7 @@ else
     main() {
 	unlink(FILENAME);
 	if (mkfifo(FILENAME, 0777) < 0) abort();
+	unlink(FILENAME "2");
 	if (link(FILENAME, FILENAME "2") < 0) exit(1);
 	exit(0);
     }
@@ -7702,11 +7999,7 @@ else
 
 main() {
        int fd[2];
-#ifdef __CYGWIN__
-       exit(1);
-#else
        exit((socketpair(AF_UNIX, SOCK_STREAM, 0, fd) != -1) ? 0 : 1);
-#endif
 }
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -7726,6 +8019,25 @@ if test x"$rsync_cv_HAVE_SOCKETPAIR" = x"yes"; then
 $as_echo "#define HAVE_SOCKETPAIR 1" >>confdefs.h
 
 fi
+
+for ac_func in getpass
+do :
+  ac_fn_c_check_func "$LINENO" "getpass" "ac_cv_func_getpass"
+if test "x$ac_cv_func_getpass" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GETPASS 1
+_ACEOF
+
+else
+  case " $LIBOBJS " in
+  *" lib/getpass.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS lib/getpass.$ac_objext"
+ ;;
+esac
+
+fi
+done
+
 
 if test x"$with_included_popt" != x"yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for poptGetContext in -lpopt" >&5
@@ -7792,7 +8104,7 @@ if test x"$with_included_popt" = x"yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $srcdir/popt" >&5
 $as_echo "$srcdir/popt" >&6; }
     BUILD_POPT='$(popt_OBJS)'
-    CFLAGS="$CFLAGS -I$srcdir/popt"
+    CFLAGS="-I$srcdir/popt $CFLAGS"
     if test x"$ALLOCA" != x
     then
 	# this can be removed when/if we add an included alloca.c;
@@ -7801,6 +8113,77 @@ $as_echo "$srcdir/popt" >&6; }
 $as_echo "$as_me: WARNING: included libpopt will use malloc, not alloca (which wastes a small amount of memory)" >&2;}
     fi
 else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+# We default to using our zlib unless --with-included-zlib=no is given.
+if test x"$with_included_zlib" != x"no"; then
+    with_included_zlib=yes
+elif test x"$ac_cv_header_zlib_h" != x"yes"; then
+    with_included_zlib=yes
+fi
+if test x"$with_included_zlib" != x"yes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for deflateParams in -lz" >&5
+$as_echo_n "checking for deflateParams in -lz... " >&6; }
+if ${ac_cv_lib_z_deflateParams+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char deflateParams ();
+int
+main ()
+{
+return deflateParams ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_z_deflateParams=yes
+else
+  ac_cv_lib_z_deflateParams=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_deflateParams" >&5
+$as_echo "$ac_cv_lib_z_deflateParams" >&6; }
+if test "x$ac_cv_lib_z_deflateParams" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBZ 1
+_ACEOF
+
+  LIBS="-lz $LIBS"
+
+else
+  with_included_zlib=yes
+fi
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use included zlib" >&5
+$as_echo_n "checking whether to use included zlib... " >&6; }
+if test x"$with_included_zlib" = x"yes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $srcdir/zlib" >&5
+$as_echo "$srcdir/zlib" >&6; }
+    BUILD_ZLIB='$(zlib_OBJS)'
+    CFLAGS="-I$srcdir/zlib $CFLAGS"
+else
+
+$as_echo "#define EXTERNAL_ZLIB 1" >>confdefs.h
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
@@ -8157,6 +8540,90 @@ fi
 
 
 
+
+# Extract the first word of "stunnel", so it can be a program name with args.
+set dummy stunnel; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_STUNNEL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $STUNNEL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_STUNNEL="$STUNNEL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_STUNNEL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_STUNNEL" && ac_cv_path_STUNNEL="stunnel"
+  ;;
+esac
+fi
+STUNNEL=$ac_cv_path_STUNNEL
+if test -n "$STUNNEL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STUNNEL" >&5
+$as_echo "$STUNNEL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "stunnel4", so it can be a program name with args.
+set dummy stunnel4; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_STUNNEL4+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $STUNNEL4 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_STUNNEL4="$STUNNEL4" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_STUNNEL4="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_STUNNEL4" && ac_cv_path_STUNNEL4="$STUNNEL"
+  ;;
+esac
+fi
+STUNNEL4=$ac_cv_path_STUNNEL4
+if test -n "$STUNNEL4"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STUNNEL4" >&5
+$as_echo "$STUNNEL4" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
 for ac_func in _acl __acl _facl __facl
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -8195,7 +8662,7 @@ $as_echo "#define HAVE_UNIXWARE_ACLS 1" >>confdefs.h
 $as_echo "#define SUPPORT_ACLS 1" >>confdefs.h
 
 	;;
-    *solaris*|*cygwin*)
+    solaris*|*cygwin*)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Using solaris ACLs" >&5
 $as_echo "Using solaris ACLs" >&6; }
 
@@ -8298,7 +8765,7 @@ _ACEOF
 
 fi
 
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ACL support" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ACL support" >&5
 $as_echo_n "checking for ACL support... " >&6; }
 if ${samba_cv_HAVE_POSIX_ACLS+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -8389,7 +8856,7 @@ $as_echo_n "checking whether to support extended attributes... " >&6; }
 if test "${enable_xattr_support+set}" = set; then :
   enableval=$enable_xattr_support;
 else
-  case "$ac_cv_func_getxattr$ac_cv_func_extattr_get_link" in
+  case "$ac_cv_func_getxattr$ac_cv_func_extattr_get_link$ac_cv_func_attropen" in
 	*yes*) enable_xattr_support=maybe ;;
 	*) enable_xattr_support=no ;;
 	esac
@@ -8408,6 +8875,54 @@ $as_echo "Using Linux xattrs" >&6; }
 $as_echo "#define HAVE_LINUX_XATTRS 1" >>confdefs.h
 
 	$as_echo "#define SUPPORT_XATTRS 1" >>confdefs.h
+
+
+$as_echo "#define NO_SYMLINK_USER_XATTRS 1" >>confdefs.h
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getxattr in -lattr" >&5
+$as_echo_n "checking for getxattr in -lattr... " >&6; }
+if ${ac_cv_lib_attr_getxattr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lattr  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char getxattr ();
+int
+main ()
+{
+return getxattr ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_attr_getxattr=yes
+else
+  ac_cv_lib_attr_getxattr=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_attr_getxattr" >&5
+$as_echo "$ac_cv_lib_attr_getxattr" >&6; }
+if test "x$ac_cv_lib_attr_getxattr" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBATTR 1
+_ACEOF
+
+  LIBS="-lattr $LIBS"
+
+fi
 
 	;;
     darwin*)
@@ -8435,7 +8950,13 @@ $as_echo "#define HAVE_FREEBSD_XATTRS 1" >>confdefs.h
 
 	;;
     solaris*)
-	# Better Solaris support coming in 3.1.0...
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Using Solaris xattrs" >&5
+$as_echo "Using Solaris xattrs" >&6; }
+
+$as_echo "#define HAVE_SOLARIS_XATTRS 1" >>confdefs.h
+
+	$as_echo "#define SUPPORT_XATTRS 1" >>confdefs.h
+
 
 $as_echo "#define NO_SYMLINK_XATTRS 1" >>confdefs.h
 
@@ -9083,6 +9604,7 @@ gives unlimited permission to copy, distribute and modify it."
 ac_pwd='$ac_pwd'
 srcdir='$srcdir'
 INSTALL='$INSTALL'
+MKDIR_P='$MKDIR_P'
 test -n "\$AWK" || AWK=awk
 _ACEOF
 
@@ -9647,6 +10169,11 @@ ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
   [\\/$]* | ?:[\\/]* ) ac_INSTALL=$INSTALL ;;
   *) ac_INSTALL=$ac_top_build_prefix$INSTALL ;;
   esac
+  ac_MKDIR_P=$MKDIR_P
+  case $MKDIR_P in
+  [\\/$]* | ?:[\\/]* ) ;;
+  */*) ac_MKDIR_P=$ac_top_build_prefix$MKDIR_P ;;
+  esac
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -9701,6 +10228,7 @@ s&@builddir@&$ac_builddir&;t t
 s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 s&@INSTALL@&$ac_INSTALL&;t t
+s&@MKDIR_P@&$ac_MKDIR_P&;t t
 $ac_datarootdir_hack
 "
 eval sed \"\$ac_sed_extra\" "$ac_file_inputs" | $AWK -f "$ac_tmp/subs.awk" \
@@ -9793,3 +10321,11 @@ $as_echo "" >&6; }
 $as_echo "    rsync ${RSYNC_VERSION} configuration successful" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: " >&5
 $as_echo "" >&6; }
+if test x$HAVE_YODL2MAN != x1; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result:     Note that yodl2man was not found, so pre-existing manpage files will be" >&5
+$as_echo "    Note that yodl2man was not found, so pre-existing manpage files will be" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result:     used w/o change (if available) -- no .yo file changes will be used." >&5
+$as_echo "    used w/o change (if available) -- no .yo file changes will be used." >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: " >&5
+$as_echo "" >&6; }
+fi
