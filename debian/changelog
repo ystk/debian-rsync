@@ -1,3 +1,10 @@
+rsync (3.1.1-3) unstable; urgency=medium
+
+  * Added patch for CVE-2014-9512, Rsync path spoofing attack vulnerability.
+    closes:#778333
+
+ -- Paul Slootman <paul@debian.org>  Sat, 07 Mar 2015 15:45:05 +0100
+
 rsync (3.1.1-2) unstable; urgency=low
 
   * hardening flags were not applied correctly, debian/rules modified thanks
