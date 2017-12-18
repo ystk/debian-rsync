@@ -1,3 +1,15 @@
+rsync (3.1.1-3+deb8u1) jessie-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * Enforce trailing \0 when receiving xattr name values (CVE-2017-16548)
+    (Closes: #880954)
+  * Check fname in recv_files sooner (CVE-2017-17433) (Closes: #883667)
+  * Sanitize xname in read_ndx_and_attrs (CVE-2017-17434) (Closes: #883665)
+  * Check daemon filter against fnamecmp in recv_files() (CVE-2017-17434)
+    (Closes: #883665)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 10 Dec 2017 14:08:49 +0100
+
 rsync (3.1.1-3) unstable; urgency=medium
 
   * Added patch for CVE-2014-9512, Rsync path spoofing attack vulnerability.
