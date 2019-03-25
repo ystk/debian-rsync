@@ -14,3 +14,7 @@ ssh-6-option.diff       - call ssh with -6 option if rsync was called with -6,
 noatime.diff		- add an option --noatime to request the kernel not to
 			  update files' access times while reading them. See
 			  https://bugzilla.samba.org/show_bug.cgi?id=7249#c5
+
+
+In order to not conflict with other patches, new security fixes need to be
+at the end.
