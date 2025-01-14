@@ -1,0 +1,30 @@
+--- a/Makefile.in.org	2025-01-13 11:27:38.149459352 +0100
++++ a/Makefile.in	2025-01-13 12:19:12.480953968 +0100
+@@ -45,7 +45,7 @@
+ 	popt/popthelp.o popt/poptparse.o
+ OBJS=$(OBJS1) $(OBJS2) $(OBJS3) $(DAEMON_OBJ) $(LIBOBJ) @BUILD_ZLIB@ @BUILD_POPT@
+ 
+-TLS_OBJ = tls.o syscall.o lib/compat.o lib/snprintf.o lib/permstring.o lib/sysxattrs.o @BUILD_POPT@
++TLS_OBJ = tls.o syscall.o t_stub.o lib/compat.o lib/snprintf.o lib/permstring.o lib/sysxattrs.o @BUILD_POPT@
+ 
+ # Programs we must have to run the test cases
+ CHECK_PROGS = rsync$(EXEEXT) tls$(EXEEXT) getgroups$(EXEEXT) getfsdev$(EXEEXT) \
+@@ -127,7 +127,7 @@
+ getfsdev$(EXEEXT): getfsdev.o
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ getfsdev.o $(LIBS)
+ 
+-TRIMSLASH_OBJ = trimslash.o syscall.o lib/compat.o lib/snprintf.o
++TRIMSLASH_OBJ = trimslash.o syscall.o t_stub.o lib/compat.o lib/snprintf.o
+ trimslash$(EXEEXT): $(TRIMSLASH_OBJ)
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(TRIMSLASH_OBJ) $(LIBS)
+ 
+--- a/t_stub.c.org	2025-01-13 12:25:45.664419785 +0100
++++ a/t_stub.c	2025-01-13 12:23:53.860569449 +0100
+@@ -34,6 +34,7 @@
+ char *partial_dir;
+ char *module_dir;
+ filter_rule_list daemon_filter_list;
++int noatime=0;
+ 
+  void rprintf(UNUSED(enum logcode code), const char *format, ...)
+ {

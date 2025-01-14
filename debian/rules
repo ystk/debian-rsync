@@ -66,6 +66,11 @@ build-stamp:
 	(cd debian/buildtree; ./configure --with-included-zlib=yes --prefix=/usr --mandir='$${prefix}/share/man' --build=$(DEB_BUILD_GNU_TYPE) --host=$(DEB_HOST_GNU_TYPE) LDFLAGS="$(LDFLAGS)")
 	@echo building
 	$(MAKE) --directory=debian/buildtree CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" all
+	# in case you want to run the testsuite just uncomment the "make check"
+	# but be aware that not all tests might pass, so just run the testsuite before and after your changes
+	# and compare the results. From Buster onward the testsuite is fixed (flaky tests are skipped) and
+	# starting with Bullseye the testsuite will be automatically run.
+	#$(MAKE) --directory=debian/buildtree CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" check
 	touch build-stamp
 	@echo done
 
